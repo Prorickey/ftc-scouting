@@ -37,7 +37,37 @@ def init():
     finally:
         release_connection(conn)
 
-def register(email, password):
+def login(email, password) -> bool:
+    """
+    Login a user with the given email and password.
+    """
+
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT password, salt FROM users WHERE email=?", (email.lower(),))
+        user = cursor.fetchone()
+
+        if user is None:
+            return False
+        
+        password_digest = user[0]
+        password_salt = user[1]
+
+        # Hash the password with the salt
+        hashed_password = hashlib.sha256((password_salt + password).encode()).hexdigest()
+
+        if hashed_password == password_digest:
+            return True
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+
+    return False
+
+
+def register(email, password, name) -> bool:
     """
     Register a new user with the given email and password. If the email is already taken, false will be returned.
     """
@@ -59,7 +89,7 @@ def register(email, password):
         hashed_password = hashlib.sha256((salt + password).encode()).hexdigest()
 
         # Insert the new user into the database
-        cursor.execute("INSERT INTO users (username, password, salt) VALUES (?, ?, ?)", (email.lower(), hashed_password, salt))
+        cursor.execute("INSERT INTO users (email, name, password, salt) VALUES (?, ?, ?, ?)", (email.lower(), name, hashed_password, salt))
         conn.commit()
     finally:
         # Release the connection back to the pool
