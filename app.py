@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from functools import wraps
 import uuid
-from flask import Flask, Response, g, make_response, redirect, request
+from flask import Flask, g, make_response, request
 import database
 import redis
 
