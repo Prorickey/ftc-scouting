@@ -203,3 +203,40 @@ def store_new_team(name: str, number: int, created_by_id: int) -> bool:
         release_connection(conn)
 
     return True
+
+def store_scheduled_match(event_code: str, scheduled_match_data: dict, season: int = 2024) -> bool:
+    """
+    Saves latest scheduled matches. If we already have old data for the match, it will be overwritten.
+
+    Args:
+        event_code: the code of the event that this match is part of
+        score_data: the dictionary storing the JSON data from a single scheduled match, obtained from the FTC Event API
+        season: the year the event happened
+    
+    Returns True if the operation succeeded, False if it failed.
+    """
+    if season != 2024:
+        # Every year has a unique score format. Only 2024-2025 is supported for now.
+        return False
+    
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        teams = scheduled_match_data['teams']
+
+        scheduled_match_keys = ["description","field","tournamentLevel","startTime","series","matchNumber","modifiedOn"]
+        scheduled_match_values = [scheduled_match_data[key] for key in scheduled_match_keys]
+
+        for team in teams:
+            query = f"INSERT OR REPLACE INTO schedule (season, eventCode, teamNumber, displayTeamNumber, station, team, teamName, surrogate, noShow, {', '.join(scheduled_match_keys)}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, {', '.join(['?']*len(scheduled_match_keys))})"
+
+            cursor.execute(query,
+                           (season, event_code, team["teamNumber"], team["displayTeamNumber"], team["station"], team["team"], team["teamName"], team["surrogate"], team["noShow"], *scheduled_match_values))
+
+            conn.commit()
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+    
+    return True

@@ -86,3 +86,22 @@ CREATE TABLE IF NOT EXISTS matches (
     modifiedOn           TEXT,
     PRIMARY KEY (season, eventCode, tournamentLevel, series, matchNumber, teamNumber, station, dq, onField)
 );
+
+CREATE TABLE IF NOT EXISTS schedule (
+    season               INTEGER NOT NULL,
+    eventCode            TEXT NOT NULL,
+    description          TEXT,
+    field                TEXT,
+    tournamentLevel      TEXT,
+    startTime            TEXT,
+    series               TEXT,
+    matchNumber          TEXT,
+    teamNumber           INTEGER,
+    displayTeamNumber    TEXT,
+    station              TEXT,
+    team                 TEXT,
+    teamName             TEXT,
+    surrogate            BOOLEAN NOT NULL,
+    noShow               BOOLEAN NOT NULL,
+    modifiedOn           TEXT
+);

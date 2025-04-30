@@ -86,3 +86,33 @@ def cache_matches(event_code: str, season: int = 2024) -> bool:
         is_good = is_good and database.store_match(event_code, match, season=season)
 
     return is_good
+
+def cache_schedule(event_code: str, season: int = 2024, qual_matches: bool = True) -> bool:
+    """
+    Retrieves schedule data from the FTC Event API and caches it in the local SQL database.
+
+    Args:
+        event_code: the event code of the event to retrieve data for (e.g. FTCCMP1OCHO)
+        season: the year that the event happened
+        qual_matches: True = get qualification match schedule, False = get elimination match schedule
+    
+    Returns True if success, False if there was an error.
+    """
+
+    season = int(season)
+    if not event_code.isalnum():
+        return False
+    
+    if __auth is None:
+        return False
+    
+    try:
+        schedule_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/schedule/{event_code}?tournamentLevel={'qual' if qual_matches else 'playoff'}", auth=__auth).json()
+    except:
+        return False
+
+    is_good = True
+    for match in schedule_data['schedule']:
+        is_good = is_good and database.store_scheduled_match(event_code, match, season=season)
+
+    return is_good
