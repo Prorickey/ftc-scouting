@@ -5,12 +5,23 @@ CREATE TABLE IF NOT EXISTS teams (
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+/* This table handles the many-to-many relation between teams and users */
+CREATE TABLE IF NOT EXISTS users_teams (
+    user_id INTEGER NOT NULL,
+    team_id INTEGER NOT NULL,
+    role    SMALLINT NOT NULL, -- 0: member, 1: admin - may add more
+    PRIMARY KEY (user_id, team_id),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (team_id) REFERENCES teams (id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS users (
     id          SERIAL  PRIMARY KEY,
     name        TEXT NOT NULL,
     email       TEXT NOT NULL UNIQUE,
     password    TEXT NOT NULL, -- The password here is hashed
     salt        TEXT NOT NULL,
+    team_id     INTEGER,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
