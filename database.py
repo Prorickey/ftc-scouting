@@ -37,7 +37,7 @@ def init():
     finally:
         release_connection(conn)
 
-def login(email, password) -> bool:
+def login(email: str, password: str) -> bool:
     """
     Login a user with the given email and password.
     """
@@ -67,7 +67,7 @@ def login(email, password) -> bool:
     return False
 
 
-def register(email, password, name) -> bool:
+def register(email: str, password: str, name: str) -> bool:
     """
     Register a new user with the given email and password. If the email is already taken, false will be returned.
     """
@@ -95,4 +95,49 @@ def register(email, password, name) -> bool:
         # Release the connection back to the pool
         release_connection(conn)
 
+    return True
+
+def store_match_scores(event_code: str, match_data: dict, season: int = 2024) -> bool:
+    """
+    Saves latest match score details. If we already have old data for the match, it will be overwritten.
+
+    Args:
+        event_code: the code of the event that this match is part of
+        match_data: the dictionary storing the JSON data from the FTC Event API
+        season: the year the event happened
+    
+    Returns True if the operation succeeded, False if it failed.
+    """
+    if season != 2024:
+        # Every year has a unique score format. Only 2024-2025 is supported for now.
+        return False
+    
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        allianceScores = match_data['alliances']
+        for alliance in ["Red", "Blue"]:
+            this_alliance: dict = next(filter(lambda allianceScore: allianceScore['alliance'] == alliance, allianceScores))
+            # cursor.execute("SELECT * FROM scores WHERE season = ? AND eventCode = ? AND matchLevel = ? AND matchSeries = ? AND matchNumber = ? AND alliance = ?",\
+            #                (season, event_code, match_data["matchLevel"], match_data["matchSeries"], match_data["matchNumber"], alliance))
+            
+            # do we need ` ON CONFLICT (season, eventCode, matchLevel, matchSeries, matchNumber, alliance) REPLACE` at the end?
+            
+            individual_alliance_keys = list(this_alliance.keys())
+            for key in individual_alliance_keys:
+                assert key.isalnum()
+            individual_alliance_values = [this_alliance[key] for key in individual_alliance_keys]
+
+            query = f"INSERT OR REPLACE INTO scores (season, eventCode, matchLevel, matchSeries, matchNumber, {', '.join(individual_alliance_keys)}) VALUES (?, ?, ?, ?, ?, {', '.join(['?']*len(individual_alliance_keys))})"
+            print(query)
+
+            cursor.execute(query,
+                           (season, event_code, match_data["matchLevel"], match_data["matchSeries"], match_data["matchNumber"], *individual_alliance_values))
+
+            conn.commit()
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+    
     return True

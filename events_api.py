@@ -1,0 +1,49 @@
+#!/usr/bin/env python3
+import sqlite3
+import requests
+from requests.auth import HTTPBasicAuth
+from dotenv import dotenv_values
+from pathlib import Path
+import database
+
+__auth = None
+
+def init():
+    """
+    Reads config files from .env and sets up authentication.
+    """
+    global __auth
+    # Load secrets from .env file
+    # Required secrets: USERNAME, TOKEN
+    # Used to interact with the FTC Event API
+    script_dir = Path(__name__).resolve().parent
+    config = dotenv_values(dotenv_path=script_dir/".env")
+
+    if "USERNAME" not in config:
+        raise ValueError("USERNAME not provided in .env")
+    if "TOKEN" not in config:
+        raise ValueError("TOKEN not provided in .env")
+    
+    __auth = HTTPBasicAuth(username=config["USERNAME"], password=config["TOKEN"])
+
+    database.init()
+
+def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True):
+    """
+    Retrieves match scores from the FTC Event API and caches them in the local SQL database.
+
+    Args:
+        event_code: the event code of the event to retrieve data for (e.g. FTCCMP1OCHO)
+        season: the year that the event happened
+        qual_matches: True = get qualification match data, False = get elimination match data
+    """
+
+    season = int(season)
+    if not event_code.isalnum():
+        return ValueError("Event code must be alphanumeric")
+    
+    score_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/scores/{event_code}/{'qual' if qual_matches else 'playoff'}", auth=__auth).json()
+
+    for match_score in score_data['matchScores']:
+        database.store_match_scores(event_code, match_score, season=season)
+    
