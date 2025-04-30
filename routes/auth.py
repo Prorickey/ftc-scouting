@@ -18,11 +18,12 @@ def register():
         if email is None or password is None or name is None:
             return make_response("missing email, password, or name", 400)
         
-        if database.register(email, password, name):
+        userid = database.register(email, password, name)
+        if userid is not None:
             # Create the session token
             token = uuid.uuid4()
-
-            R.set_session(token, email)
+            
+            R.set_session(token, userid, email)
 
             # Set the session cookie in the response
             response = make_response("success", 200)
@@ -44,12 +45,13 @@ def login():
         if email is None or password is None:
             return make_response("missing email or password", 400)
         
-        if database.login(email, password):
+        userid = database.login(email, password)
+        if userid is not None:
             # Create the session token
             token = uuid.uuid4()
 
             # Store the session data in Redis
-            R.set_session(token, email)
+            R.set_session(token, userid, email)
 
             # Set the session cookie in the response
             response = make_response("success", 200)

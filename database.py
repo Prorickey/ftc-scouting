@@ -37,7 +37,7 @@ def init():
     finally:
         release_connection(conn)
 
-def login(email: str, password: str) -> bool:
+def login(email: str, password: str) -> int:
     """
     Login a user with the given email and password.
     """
@@ -46,11 +46,13 @@ def login(email: str, password: str) -> bool:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT password, salt FROM users WHERE email=?", (email.lower(),))
+        cursor.execute("SELECT password, salt, rowid FROM users WHERE email=?", (email.lower(),))
         user = cursor.fetchone()
 
         if user is None:
-            return False
+            return None
+        
+        print(user)
         
         password_digest = user[0]
         password_salt = user[1]
@@ -59,15 +61,15 @@ def login(email: str, password: str) -> bool:
         hashed_password = hashlib.sha256((password_salt + password).encode()).hexdigest()
 
         if hashed_password == password_digest:
-            return True
+            return int(user[2])
     finally:
         # Release the connection back to the pool
         release_connection(conn)
 
-    return False
+    return None
 
 
-def register(email: str, password: str, name: str) -> bool:
+def register(email: str, password: str, name: str) -> int:
     """
     Register a new user with the given email and password. If the email is already taken, false will be returned.
     """
@@ -80,7 +82,7 @@ def register(email: str, password: str, name: str) -> bool:
         existing_user = cursor.fetchone()
 
         if existing_user is not None:
-            return False
+            return None
 
         # Generate a random salt
         salt = ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(8))
@@ -90,12 +92,12 @@ def register(email: str, password: str, name: str) -> bool:
 
         # Insert the new user into the database
         cursor.execute("INSERT INTO users (email, name, password, salt) VALUES (?, ?, ?, ?)", (email.lower(), name, hashed_password, salt))
+        id = cursor.lastrowid
         conn.commit()
+        return id
     finally:
         # Release the connection back to the pool
         release_connection(conn)
-
-    return True
 
 def store_match_score(event_code: str, score_data: dict, season: int = 2024) -> bool:
     """
@@ -174,3 +176,30 @@ def store_match(event_code: str, match_data: dict, season: int = 2024) -> bool:
 
 # This example query gets the number of points that 22377's alliance scored in every match they played that is in the database
 # SELECT scores.totalPoints FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0 WHERE matches.teamNumber=22377;
+    
+def store_new_team(name: str, number: int, created_by_id: int) -> bool:
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM teams WHERE team_number=?", (number,))
+        existing_user = cursor.fetchone()
+
+        if existing_user is not None:
+            return False
+
+        # Insert the new user into the database
+        cursor.execute("INSERT INTO teams (name, team_number) VALUES (?, ?)", (name, number,))
+        team_id = cursor.lastrowid
+
+        if team_id is None: # Ideally, should never happen
+            print("ERROR: Storing a new team returned no id")
+            return False
+        
+        cursor.execute("INSERT INTO users_teams (user_id, team_id, role) VALUES (?, ?, 1)", (created_by_id, team_id,))
+        conn.commit()
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+
+    return True

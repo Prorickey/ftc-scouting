@@ -21,12 +21,12 @@ def authenticated(f):
             return make_response('missing session token', 401)
         
         # Retrieve email based on session token
-        email = R.get_session(session_token)
+        user = R.get_session(session_token)
 
-        if not email:
+        if not user:
             return make_response('incorrect session token', 401)
         
         # Attach the email to the context
-        g.email = email
+        g.user = user
         return f(*args, **kwargs)
     return decorated_function
