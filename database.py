@@ -97,13 +97,13 @@ def register(email: str, password: str, name: str) -> bool:
 
     return True
 
-def store_match_scores(event_code: str, match_data: dict, season: int = 2024) -> bool:
+def store_match_score(event_code: str, score_data: dict, season: int = 2024) -> bool:
     """
     Saves latest match score details. If we already have old data for the match, it will be overwritten.
 
     Args:
         event_code: the code of the event that this match is part of
-        match_data: the dictionary storing the JSON data from the FTC Event API
+        score_data: the dictionary storing the JSON data from a single match, obtained from the FTC Event API
         season: the year the event happened
     
     Returns True if the operation succeeded, False if it failed.
@@ -116,24 +116,17 @@ def store_match_scores(event_code: str, match_data: dict, season: int = 2024) ->
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        allianceScores = match_data['alliances']
+        allianceScores = score_data['alliances']
         for alliance in ["Red", "Blue"]:
             this_alliance: dict = next(filter(lambda allianceScore: allianceScore['alliance'] == alliance, allianceScores))
-            # cursor.execute("SELECT * FROM scores WHERE season = ? AND eventCode = ? AND matchLevel = ? AND matchSeries = ? AND matchNumber = ? AND alliance = ?",\
-            #                (season, event_code, match_data["matchLevel"], match_data["matchSeries"], match_data["matchNumber"], alliance))
-            
-            # do we need ` ON CONFLICT (season, eventCode, matchLevel, matchSeries, matchNumber, alliance) REPLACE` at the end?
-            
-            individual_alliance_keys = list(this_alliance.keys())
-            for key in individual_alliance_keys:
-                assert key.isalnum()
+
+            individual_alliance_keys = ['alliance', 'team', 'robot1Auto', 'robot2Auto', 'autoSampleNet', 'autoSampleLow', 'autoSampleHigh', 'autoSpecimenLow', 'autoSpecimenHigh', 'teleopSampleNet', 'teleopSampleLow', 'teleopSampleHigh', 'teleopSpecimenLow', 'teleopSpecimenHigh', 'robot1Teleop', 'robot2Teleop', 'minorFouls', 'majorFouls', 'autoSamplePoints', 'autoSpecimenPoints', 'teleopSamplePoints', 'teleopSpecimenPoints', 'teleopParkPoints', 'teleopAscentPoints', 'autoPoints', 'teleopPoints', 'endGamePoints', 'foulPointsCommitted', 'preFoulTotal', 'totalPoints']
             individual_alliance_values = [this_alliance[key] for key in individual_alliance_keys]
 
             query = f"INSERT OR REPLACE INTO scores (season, eventCode, matchLevel, matchSeries, matchNumber, {', '.join(individual_alliance_keys)}) VALUES (?, ?, ?, ?, ?, {', '.join(['?']*len(individual_alliance_keys))})"
-            print(query)
 
             cursor.execute(query,
-                           (season, event_code, match_data["matchLevel"], match_data["matchSeries"], match_data["matchNumber"], *individual_alliance_values))
+                           (season, event_code, score_data["matchLevel"], score_data["matchSeries"], score_data["matchNumber"], *individual_alliance_values))
 
             conn.commit()
     finally:
@@ -141,3 +134,43 @@ def store_match_scores(event_code: str, match_data: dict, season: int = 2024) ->
         release_connection(conn)
     
     return True
+
+def store_match(event_code: str, match_data: dict, season: int = 2024) -> bool:
+    """
+    Saves latest match details. If we already have old data for the match, it will be overwritten.
+
+    Args:
+        event_code: the code of the event that this match is part of
+        score_data: the dictionary storing the JSON data from a single match, obtained from the FTC Event API
+        season: the year the event happened
+    
+    Returns True if the operation succeeded, False if it failed.
+    """
+    if season != 2024:
+        # Every year has a unique score format. Only 2024-2025 is supported for now.
+        return False
+    
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        teams = match_data['teams']
+
+        match_keys = ["actualStartTime","description","tournamentLevel","series","matchNumber","scoreRedFinal","scoreRedFoul","scoreRedAuto","scoreBlueFinal","scoreBlueFoul","scoreBlueAuto","postResultTime","modifiedOn"]
+        match_values = [match_data[key] for key in match_keys]
+
+        for team in teams:
+            query = f"INSERT OR REPLACE INTO matches (season, eventCode, teamNumber, station, dq, onField, {', '.join(match_keys)}) VALUES (?, ?, ?, ?, ?, ?, {', '.join(['?']*len(match_keys))})"
+
+            cursor.execute(query,
+                           (season, event_code, team["teamNumber"], team["station"], team["dq"], team["onField"], *match_values))
+
+            conn.commit()
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+    
+    return True
+
+# This example query gets the number of points that 22377's alliance scored in every match they played that is in the database
+# SELECT scores.totalPoints FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0 WHERE matches.teamNumber=22377;

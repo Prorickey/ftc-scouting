@@ -62,4 +62,27 @@ CREATE TABLE IF NOT EXISTS scores (
     totalPoints          INTEGER NOT NULL,
     team                 INTEGER NOT NULL,
     PRIMARY KEY (season, eventCode, matchLevel, matchSeries, matchNumber, alliance)
-)
+);
+
+CREATE TABLE IF NOT EXISTS matches (
+    season               INTEGER NOT NULL,
+    eventCode            TEXT NOT NULL,
+    actualStartTime      TEXT,
+    description          TEXT,
+    tournamentLevel      TEXT,
+    series               INTEGER NOT NULL,
+    matchNumber          INTEGER NOT NULL,
+    scoreRedFinal        INTEGER NOT NULL,
+    scoreRedFoul         INTEGER NOT NULL,
+    scoreRedAuto         INTEGER NOT NULL,
+    scoreBlueFinal       INTEGER NOT NULL,
+    scoreBlueFoul        INTEGER NOT NULL,
+    scoreBlueAuto        INTEGER NOT NULL,
+    postResultTime       TEXT,
+    teamNumber           INTEGER NOT NULL,
+    station              TEXT,
+    dq                   BOOLEAN NOT NULL,
+    onField              BOOLEAN NOT NULL,
+    modifiedOn           TEXT,
+    PRIMARY KEY (season, eventCode, tournamentLevel, series, matchNumber, teamNumber, station, dq, onField)
+);

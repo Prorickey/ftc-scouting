@@ -28,7 +28,7 @@ def init():
 
     database.init()
 
-def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True):
+def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True) -> bool:
     """
     Retrieves match scores from the FTC Event API and caches them in the local SQL database.
 
@@ -36,14 +36,53 @@ def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True)
         event_code: the event code of the event to retrieve data for (e.g. FTCCMP1OCHO)
         season: the year that the event happened
         qual_matches: True = get qualification match data, False = get elimination match data
+    
+    Returns True if success, False if there was an error.
     """
 
     season = int(season)
     if not event_code.isalnum():
-        return ValueError("Event code must be alphanumeric")
+        return False
     
-    score_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/scores/{event_code}/{'qual' if qual_matches else 'playoff'}", auth=__auth).json()
+    if __auth is None:
+        return False
+    
+    try:
+        score_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/scores/{event_code}/{'qual' if qual_matches else 'playoff'}", auth=__auth).json()
+    except:
+        return False
 
+    is_good = True
     for match_score in score_data['matchScores']:
-        database.store_match_scores(event_code, match_score, season=season)
+        is_good = is_good and database.store_match_score(event_code, match_score, season=season)
+
+    return is_good
+
+def cache_matches(event_code: str, season: int = 2024) -> bool:
+    """
+    Retrieves matches (i.e. participating teams, final scores, start times, etc) from the FTC Event API and caches them in the local SQL database.
+
+    Args:
+        event_code: the event code of the event to retrieve data for (e.g. FTCCMP1OCHO)
+        season: the year that the event happened
     
+    Returns True if success, False if there was an error.
+    """
+
+    season = int(season)
+    if not event_code.isalnum():
+        return False
+    
+    if __auth is None:
+        return False
+    
+    try:
+        match_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/matches/{event_code}", auth=__auth).json()
+    except:
+        return False
+
+    is_good = True
+    for match in match_data['matches']:
+        is_good = is_good and database.store_match(event_code, match, season=season)
+
+    return is_good
