@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from functools import wraps
 import database
 import R
 from routes import create_app
