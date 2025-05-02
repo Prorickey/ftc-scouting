@@ -4,6 +4,7 @@ import sqlite3
 import hashlib
 import string
 from functools import reduce
+from helper import *
 
 schema_file = "schema.sql"
 
@@ -247,17 +248,19 @@ class MatchKey:
     match_level: str
     match_series: int
     match_number: int
+    alliance: str
     season: int = 2024
 
-    def __init__(self, event_code: str, match_level: str, match_series: int, match_number: int, season: int = 2024):
+    def __init__(self, event_code: str, match_level: str, match_series: int, match_number: int, alliance: str, season: int = 2024):
         self.event_code = event_code
         self.match_level = match_level
         self.match_series = match_series
         self.match_number = match_number
+        self.alliance = alliance
         self.season = season
 
     def __repr__(self) -> str:
-        return f'MatchKey("{self.event_code}", "{self.match_level}", {self.match_series}, {self.match_number}, season={self.season})'
+        return f'MatchKey(event_code="{self.event_code}", match_level="{self.match_level}", match_series={self.match_series}, match_number={self.match_number}, alliance="{self.alliance}", season={self.season})'
     
     def __hash__(self) -> int:
         return self.__repr__().__hash__()
@@ -265,11 +268,38 @@ class MatchKey:
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
 
-def get_match_stats(event_code: str, fields: list[str], season: int = 2024) -> list:
+def get_match_stats(event_code: str, season: int = 2024) -> dict:
     """
-    Gets various score statistics (specified by `fields`) from every match at the event for the given season. 
+    Gets all score statistics from every match at the event for the given season.
+
+    Args:
+        event_code: the event code for matches to be retrieved
+        season: the season the event happened in
+    
+    Returns a dictionary storing match statistics, or an empty dictionary if there was an error.
+        Key: a MatchKey
+        Value: dictionary where key = statistic (from FTC event API) and value = its value
     """
+    fields = ['robot1Auto', 'robot2Auto', 'autoSampleNet', 'autoSampleLow', 'autoSampleHigh', 'autoSpecimenLow', 'autoSpecimenHigh', 'teleopSampleNet', 'teleopSampleLow', 'teleopSampleHigh', 'teleopSpecimenLow', 'teleopSpecimenHigh', 'robot1Teleop', 'robot2Teleop', 'minorFouls', 'majorFouls', 'autoSamplePoints', 'autoSpecimenPoints', 'teleopSamplePoints', 'teleopSpecimenPoints', 'teleopParkPoints', 'teleopAscentPoints', 'autoPoints', 'teleopPoints', 'endGamePoints', 'foulPointsCommitted', 'preFoulTotal', 'totalPoints']
     # SELECT * FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0;
+    
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        query = f"SELECT matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE eventCode=? AND season=?"
+
+        cursor.execute(query, (event_code, season))
+
+        scores = cursor.fetchall()
+
+        return {MatchKey(event_code=event_code, match_level=score[0], match_series=score[1], match_number=score[2], alliance=score[3], season=season): {fields[i]: score[4+i] for i in range(len(fields))} for score in scores}
+    except Exception as e:
+        print(e)
+        return {}
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
 
 def get_match_teams(event_code: str, season: int = 2024) -> dict:
     """
@@ -279,7 +309,7 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict:
         event_code: the event code for matches to be retrieved
         season: the season the event happened in
     
-    Returns a dictionary storing teams playing in each match, or None if there was an error.
+    Returns a dictionary storing teams playing in each match, or an empty dictionary if there was an error.
         Key: a MatchKey
         Value: dictionary where the key is the team number and the value is a tuple (station, on_field)
     """
@@ -295,31 +325,12 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict:
 
         matches = cursor.fetchall()
 
-        individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, season=season): {team_number: (station, on_field)}}
+        individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, alliance=station[:-1], season=season): {team_number: (station, on_field)}}
                             for (event_code, match_level, match_series, match_number, team_number, station, on_field) in matches]
         
-        # mergeWith : (v -> v -> v) -> SortedMap k v -> SortedMap k v -> SortedMap k v
-        # here, v is another dictionary, and the behavior we want is to combine the dictionaries
-        # foldl (mergeWith mergeLeft) 
-        """
-        Main> foldl (mergeWith mergeLeft) Data.SortedMap.empty [Data.SortedMap.singleton "a" (Data.SortedMap.singleton 123 "Red1"), Data.SortedMap.singleton "a" (Data.SortedMap.singleton 456 "Red2")]
-        M (M 0 (Leaf "a" (M (M 1 (Branch2 (Leaf 123 "Red1") 123 (Leaf 456 "Red2"))))))
-        """
-        # wow idris sucks sometimes (`Data.SortedMap.toList $ head @{believe_me (NonEmpty a)} a`), but yes this is the right idea
-
-        def merge_with(fn, left_dict: dict, right_dict: dict):
-            # merge two dictionaries by merging their values using fn to combine duplicate keys
-            fn_ = lambda a,b: b if a == None else (a if b == None else fn(a,b))
-            return {k: fn_(left_dict.get(k), right_dict.get(k)) for k in left_dict.keys() | right_dict.keys()}
-
-        def merge_left(left_dict: dict, right_dict: dict):
-            # left-biased merge
-            return merge_with(lambda l, r: l, left_dict, right_dict)
-
-        # I WANT CURRYING
         return reduce(lambda current_dict, new_dict: merge_with(merge_left, current_dict, new_dict), individual_dicts)
+    except:
+        return {}
     finally:
         # Release the connection back to the pool
         release_connection(conn)
-    
-    return {}
