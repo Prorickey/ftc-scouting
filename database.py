@@ -256,8 +256,14 @@ class MatchKey:
         self.match_number = match_number
         self.season = season
 
-    def __repr__(self):
-        return f"{self.season}{self.event_code}_{self.match_level}_{self.match_series}_{self.match_number}"
+    def __repr__(self) -> str:
+        return f'MatchKey("{self.event_code}", "{self.match_level}", {self.match_series}, {self.match_number}, season={self.season})'
+    
+    def __hash__(self) -> int:
+        return self.__repr__().__hash__()
+    
+    def __eq__(self, other) -> bool:
+        return self.__hash__() == other.__hash__()
 
 def get_match_stats(event_code: str, fields: list[str], season: int = 2024) -> list:
     """
@@ -292,9 +298,26 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict:
         individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, season=season): {team_number: (station, on_field)}}
                             for (event_code, match_level, match_series, match_number, team_number, station, on_field) in matches]
         
-        # this needs a fold
+        # mergeWith : (v -> v -> v) -> SortedMap k v -> SortedMap k v -> SortedMap k v
+        # here, v is another dictionary, and the behavior we want is to combine the dictionaries
+        # foldl (mergeWith mergeLeft) 
+        """
+        Main> foldl (mergeWith mergeLeft) Data.SortedMap.empty [Data.SortedMap.singleton "a" (Data.SortedMap.singleton 123 "Red1"), Data.SortedMap.singleton "a" (Data.SortedMap.singleton 456 "Red2")]
+        M (M 0 (Leaf "a" (M (M 1 (Branch2 (Leaf 123 "Red1") 123 (Leaf 456 "Red2"))))))
+        """
+        # wow idris sucks sometimes (`Data.SortedMap.toList $ head @{believe_me (NonEmpty a)} a`), but yes this is the right idea
 
-        return {k: {k_: v_ for d in [v] for k_, v_ in d.items()} for d in individual_dicts for k, v in d.items()}
+        def merge_with(fn, left_dict: dict, right_dict: dict):
+            # merge two dictionaries by merging their values using fn to combine duplicate keys
+            fn_ = lambda a,b: b if a == None else (a if b == None else fn(a,b))
+            return {k: fn_(left_dict.get(k), right_dict.get(k)) for k in left_dict.keys() | right_dict.keys()}
+
+        def merge_left(left_dict: dict, right_dict: dict):
+            # left-biased merge
+            return merge_with(lambda l, r: l, left_dict, right_dict)
+
+        # I WANT CURRYING
+        return reduce(lambda current_dict, new_dict: merge_with(merge_left, current_dict, new_dict), individual_dicts)
     finally:
         # Release the connection back to the pool
         release_connection(conn)
