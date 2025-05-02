@@ -3,6 +3,7 @@ import secrets
 import sqlite3
 import hashlib
 import string
+from functools import reduce
 
 schema_file = "schema.sql"
 
@@ -15,10 +16,10 @@ __connection_pool = Queue(maxsize=5)
 for _ in range(5):
     __connection_pool.put(sqlite3.connect("database.db", check_same_thread=False))
 
-def get_connection():
+def get_connection() -> sqlite3.Connection:
     return __connection_pool.get()
 
-def release_connection(connection):
+def release_connection(connection: sqlite3.Connection):
     __connection_pool.put(connection)
 
 def init():
@@ -176,7 +177,7 @@ def store_match(event_code: str, match_data: dict, season: int = 2024) -> bool:
 
 # This example query gets the number of points that 22377's alliance scored in every match they played that is in the database
 # SELECT scores.totalPoints FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0 WHERE matches.teamNumber=22377;
-    
+
 def store_new_team(name: str, number: int, created_by_id: int) -> bool:
     # Grab a connection from the pool
     conn = get_connection()
@@ -240,3 +241,62 @@ def store_scheduled_match(event_code: str, scheduled_match_data: dict, season: i
         release_connection(conn)
     
     return True
+
+class MatchKey:
+    event_code: str
+    match_level: str
+    match_series: int
+    match_number: int
+    season: int = 2024
+
+    def __init__(self, event_code: str, match_level: str, match_series: int, match_number: int, season: int = 2024):
+        self.event_code = event_code
+        self.match_level = match_level
+        self.match_series = match_series
+        self.match_number = match_number
+        self.season = season
+
+    def __repr__(self):
+        return f"{self.season}{self.event_code}_{self.match_level}_{self.match_series}_{self.match_number}"
+
+def get_match_stats(event_code: str, fields: list[str], season: int = 2024) -> list:
+    """
+    Gets various score statistics (specified by `fields`) from every match at the event for the given season. 
+    """
+    # SELECT * FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0;
+
+def get_match_teams(event_code: str, season: int = 2024) -> dict:
+    """
+    Retrieves teams playing in each match.
+
+    Args:
+        event_code: the event code for matches to be retrieved
+        season: the season the event happened in
+    
+    Returns a dictionary storing teams playing in each match, or None if there was an error.
+        Key: a MatchKey
+        Value: dictionary where the key is the team number and the value is a tuple (station, on_field)
+    """
+
+    # SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField FROM matches WHERE eventCode="FTCCMP1OCHO"
+    # Grab a connection from the pool
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        query = f"SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField FROM matches WHERE eventCode=? AND season=?"
+
+        cursor.execute(query, (event_code, season))
+
+        matches = cursor.fetchall()
+
+        individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, season=season): {team_number: (station, on_field)}}
+                            for (event_code, match_level, match_series, match_number, team_number, station, on_field) in matches]
+        
+        # this needs a fold
+
+        return {k: {k_: v_ for d in [v] for k_, v_ in d.items()} for d in individual_dicts for k, v in d.items()}
+    finally:
+        # Release the connection back to the pool
+        release_connection(conn)
+    
+    return {}
