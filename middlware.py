@@ -1,6 +1,6 @@
 from functools import wraps
 
-from flask import g, make_response, request
+from flask import g, jsonify, make_response, request
 
 import R
 
@@ -18,13 +18,13 @@ def authenticated(f):
         session_token = request.cookies.get('session')
 
         if not session_token:
-            return make_response('missing session token', 401)
+            return make_response(jsonify({'error': 'missing session token'}), 401)
         
         # Retrieve email based on session token
         user = R.get_session(session_token)
 
         if not user:
-            return make_response('incorrect session token', 401)
+            return make_response(jsonify({'error': 'incorrect session token'}), 401)
         
         # Attach the email to the context
         g.user = user

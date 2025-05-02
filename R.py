@@ -14,6 +14,10 @@ def init() -> bool:
     except:
         print("REDIS: Not Running -- No Streams Available")
         return False
+    
+class Team(TypedDict):
+    id: int 
+    name: str
 
 class UserSession(TypedDict):
     id: int
