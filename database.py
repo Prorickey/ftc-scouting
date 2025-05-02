@@ -268,7 +268,7 @@ class MatchKey:
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
 
-def get_match_stats(event_code: str, season: int = 2024) -> dict:
+def get_match_scores(event_code: str, season: int = 2024) -> dict[MatchKey, dict[str, Any]]:
     """
     Gets all score statistics from every match at the event for the given season.
 
@@ -301,7 +301,7 @@ def get_match_stats(event_code: str, season: int = 2024) -> dict:
         # Release the connection back to the pool
         release_connection(conn)
 
-def get_match_teams(event_code: str, season: int = 2024) -> dict:
+def get_match_teams(event_code: str, season: int = 2024) -> dict[MatchKey, dict[int, tuple[str, bool]]]:
     """
     Retrieves teams playing in each match.
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import database
-
-
+import numpy as np
+from typing import Callable
+from functools import reduce
+from helper import *
 
 # %%
 # Let's try calculating OPR
@@ -23,69 +25,48 @@ import database
 # "just try stuff," as our keynote speaker eloquently stated today
 # premature optimization is the root of all evil
 
-stat = lambda allianceScore: allianceScore['teleopSampleNet'] + allianceScore['teleopSampleLow'] + allianceScore['teleopSampleHigh'] + allianceScore['teleopSpecimenLow'] + allianceScore['teleopSpecimenHigh']
+def calc_opr_from_function(event_code: str, fn: Callable[[dict[database.MatchKey, dict[str, Any]]], float], season: int = 2024) -> dict:
+    """
+    Calculates OPR for every team in an event.
 
-import numpy as np
-from functools import reduce
+    Args:
+        event_code: the event code of the event (used to retrieve data from database)
+        fn: the function used to calculate the relevant metric, given a dictionary of score stats from the FTC Event API (e.g. autoSampleNet, teleopPoints, etc)
+        season: the season the event happened
+    
+    Returns a dictionary where key = team number and value = calculated metric.
+    """
 
-match_teams = {}
-match_scores = {}
+    match_teams = database.get_match_teams(event_code=event_code, season=season)
+    match_scores = database.get_match_scores(event_code=event_code, season=season)
 
-# want to write this functionally but want to get working first
-for match in test_match_data['matches']:
-    # data that links these together (oops should probably use SQL eventually haha):
-    # tournamentLevel in matches = matchLevel in scores
-    # series in matches = matchSeries in scores
-    # matchNumber in matches = matchNumber in scores
-    teams = match['teams']
-    active_teams = list(filter(lambda team: team['onField'], teams))
-    # teams = reduce(dict.__or__, map(lambda team: {team['station']: team['teamNumber']}, active_teams), {})
-    red_teams = list(map(lambda team: team['teamNumber'], filter(lambda team: "Red" in team['station'], active_teams)))
-    blue_teams = list(map(lambda team: team['teamNumber'], filter(lambda team: "Blue" in team['station'], active_teams)))
-    match_teams[(match['tournamentLevel'], match['series'], match['matchNumber'])] = [red_teams, blue_teams]
+    teams_at_event = list(set(flatten(map(lambda match_team: list(match_team.keys()), match_teams.values()))))
 
-match = None # no footguns here!
+    alliance_matrix = np.zeros((len(match_scores), len(teams_at_event)), dtype=np.uint64)
+    score_matrix = np.zeros((len(match_scores), 1), dtype=np.float64)
 
-for score in test_score_data['matchScores']:
-    allianceScores = score['alliances']
-    blue_stat = stat(next(filter(lambda allianceScore: allianceScore['alliance'] == 'Blue', allianceScores)))
-    red_stat = stat(next(filter(lambda allianceScore: allianceScore['alliance'] == 'Red', allianceScores)))
+    # alliance_matrix is the design matrix X
+    # we'll have a score_matrix Y of relevant stats for every alliance
+    # X*beta = Y
+    # X_pinv * Y = beta
 
-    match_scores[(score['matchLevel'], score['matchSeries'], score['matchNumber'])] = [red_stat, blue_stat]
+    for idx, key in enumerate(match_teams.keys()):
+        if key not in match_scores:
+            # probably didn't pull qual and playoff data from both
+            return {}
+        # ` and match_teams[key][team][1]` is important, ensures a team actually played in that match
+        # Orange Alliance does not have this check and only looks at qual matches (i.e. to have our OPR match theirs, remove the check and continue if key.match_level != "QUALIFICATION")
+        # This is better though IMO
+        alliance_matrix[idx] = list(map(lambda team: 1 if team in match_teams[key].keys() and match_teams[key][team][1] else 0, teams_at_event))
+        score_matrix[idx] = fn(match_scores[key])
 
-# We only care about the matches we have scores for
-match_teams = {k: v for k, v in match_teams.items() if k in match_scores.keys()}
+    # %%
+    opr = np.linalg.pinv(alliance_matrix)@score_matrix
 
-teams_at_event = list(set(team for d in match_teams.values() for q in d for team in q))
-
-match_keys = list(match_scores.keys()) # set an order now
-
-# matches*2 because 2 alliances per match, i am arbitrarily deciding to do first red then blue
-alliance_matrix = np.zeros((len(match_scores) * 2, len(teams_at_event)), dtype=np.uint64)
-score_matrix = np.zeros((len(match_scores) * 2, 1), dtype=np.float64)
-
-# alliance_matrix is the design matrix X
-# we'll have a score_matrix Y of relevant stats for every alliance
-# X*beta = Y
-# X_pinv * Y = beta
-
-for idx, key in enumerate(match_keys):
-    red_teams = list(map(lambda team: 1 if team in match_teams[key][0] else 0, teams_at_event))
-    blue_teams = list(map(lambda team: 1 if team in match_teams[key][1] else 0, teams_at_event))
-    alliance_matrix[idx*2] = red_teams
-    alliance_matrix[idx*2+1] = blue_teams
-    # Is it an interesting stat at all if we swap these?
-    # (i.e. how many points did the other alliance score, then link that to your team?)
-    # I wonder if it correlates to strength of schedule or defensive ability or something
-    score_matrix[idx*2] = match_scores[key][0]
-    score_matrix[idx*2+1] = match_scores[key][1]
-
-# %%
-opr = np.linalg.pinv(alliance_matrix)@score_matrix
-
-opr_associated_with_team = sorted(map(lambda t: (t[1][0], teams_at_event[t[0]]), enumerate(opr)), reverse=True)
+    return {teams_at_event[t[0]]: t[1][0] for t in enumerate(opr)}
 # %%
 # plot it for fun!
+"""
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(12,8), dpi=300)
@@ -95,4 +76,5 @@ plt.ylabel("totalGamePieces")
 plt.xticks(rotation=45, fontsize=4)
 plt.savefig("totalGamePieces.png")
 plt.show()
+"""
 # %%

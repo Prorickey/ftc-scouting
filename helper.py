@@ -3,6 +3,7 @@
 Some useful functions not part of the standard library (mostly cool functional constructs to cope with Python).
 """
 from typing import Callable, Any
+from functools import reduce
 
 # Inspired by https://www.idris-lang.org/docs/idris2/0.6.0/contrib_docs/docs/Data.SortedMap.html#Data.SortedMap.mergeWith
 def merge_with(fn: Callable[[Any, Any], Any], left_dict: dict, right_dict: dict) -> dict:
@@ -30,3 +31,14 @@ def merge_left(left_dict: dict, right_dict: dict) -> dict:
     Returns the merged dictionary.
     """
     return merge_with(lambda l, r: l, left_dict, right_dict)
+
+def flatten(lists: list[list]) -> list:
+    """
+    Flatten a list of lists to a single list.
+
+    Args:
+        lists: the list of lists
+
+    Returns the flattened list.
+    """
+    return reduce(lambda a, b: a+b, lists, [])
