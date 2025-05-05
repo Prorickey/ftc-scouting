@@ -199,7 +199,8 @@ def store_new_team(name: str, number: int, created_by_id: int) -> Team:
             print("ERROR: Storing a new team returned no id")
             return None
         
-        cursor.execute("UPDATE users SET team_id=?, team_role=1 WHERE id=?", (created_by_id, team_id,))
+        print(team_id, created_by_id)
+        cursor.execute("UPDATE users SET team_id=?, team_role=1 WHERE rowid=?", (team_id, created_by_id,))
         conn.commit()
         return {'id': cursor.lastrowid, 'name': name}
     finally:
@@ -339,7 +340,7 @@ def get_user_team(user_id: int) -> UserTeam:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role FROM users LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?;", (user_id,))
+        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role FROM users u INNER JOIN teams t ON u.team_id = t.rowid WHERE u.rowid = ?;", (user_id,))
         team = cursor.fetchone()
 
         if team is None:
@@ -353,9 +354,32 @@ def update_team(team: Team) -> bool:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("UPDATE team SET name=? WHERE id=?", (team.name, team.id,))
-        cursor.commit()
+        print(team['name'])
+        cursor.execute("UPDATE teams SET name=? WHERE rowid=?", (team['name'], team['id'],))
+        conn.commit()
 
         return True 
     finally:
         release_connection(conn)
+
+def remove_user(user_id: int) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET team_id = NULL, team_role = NULL WHERE rowid=?", (user_id, ))
+        conn.commit()
+
+        return True 
+    finally:
+        release_connection(conn)
+
+def add_user(team: Team, email: str) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET team_id = ?, team_role = 0 WHERE email=?", (team['id'], email, ))
+        conn.commit()
+
+        return True 
+    finally:
+        release_connection(conn)     

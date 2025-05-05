@@ -1,8 +1,9 @@
 from flask import Blueprint, g, jsonify, make_response, request
 
-from R import UserSession, UserTeam
-from database import get_user_team, store_new_team, update_team
-from middlware import authenticated
+from R import UserTeam
+from database import add_user, remove_user, store_new_team, update_team
+from middlware import authenticated, team_admin
+from email_validator import validate_email, EmailNotValidError
 
 teams = Blueprint('teams', __name__)
 
@@ -29,23 +30,55 @@ def create_team():
     else:
         return make_response(jsonify({'error': "failed to create team; team may already exist"}), 400)
     
-@teams.route("/update", methods=["POST"])
-@authenticated
-def edit_team():
-    user: UserSession = g.user
-    team: UserTeam = get_user_team(user['id'])
 
-    if team.role != 1: # Check if they are an admin here
-        return make_response(jsonify({'error': 'insufficient permissions'}, 403))
+    
+@teams.route("/update", methods=["POST"])
+@team_admin
+def edit_team():
+    team: UserTeam = g.team
 
     body = request.get_json()
 
-    if name := body.get("name") is not None:
-        team.name = name 
+    name = body.get("name")
+    if name is not None:
+        team['name'] = name 
 
     if update_team(team):
         return make_response(jsonify({'message': 'sucessfully updated team'}), 200)
     else:
         return make_response(jsonify({'error': 'failed to update team'}))
     
+@teams.route("/members/<user_id>", methods=["DELETE"])
+@team_admin
+def remove_member(user_id: str):
+    uid = None 
+    try:
+        uid = int(user_id)
+    except:
+        return make_response(jsonify({"error": "user id is not an integer"}))
+    
+    if remove_user(uid):
+        return make_response(jsonify({"message": "sucessfully removed the user"}))
+    else:
+        return make_response(jsonify({'error': 'failed to remove the user'}))
+        
+@teams.route("/members", methods=["PUT"])
+@team_admin
+def add_member():
+    team: UserTeam = g.team 
 
+    body = request.get_json()
+
+    email = body.get("email")
+    if email is None:
+        return make_response(jsonify({"error": "body missing email"}))
+    
+    try:
+        validate_email(email)
+    except EmailNotValidError:
+        return make_response(jsonify({"error": "invalid email"}))
+    
+    if add_user(team, email):
+        return make_response(jsonify({"message": "sucessfully added the user"}))
+    else:
+        return make_response(jsonify({'error': 'failed to add the user'}))
