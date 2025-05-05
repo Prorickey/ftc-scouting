@@ -6,6 +6,8 @@ import string
 from functools import reduce
 from helper import *
 
+from R import Team, UserTeam
+
 schema_file = "schema.sql"
 
 # Connection pool for SQLite database connections
@@ -178,17 +180,16 @@ def store_match(event_code: str, match_data: dict, season: int = 2024) -> bool:
 
 # This example query gets the number of points that 22377's alliance scored in every match they played that is in the database
 # SELECT scores.totalPoints FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0 WHERE matches.teamNumber=22377;
-
-def store_new_team(name: str, number: int, created_by_id: int) -> bool:
+def store_new_team(name: str, number: int, created_by_id: int) -> Team:
     # Grab a connection from the pool
     conn = get_connection()
     try:
-        cursor = conn.cursor()
+        cursor: sqlite3.Cursor = conn.cursor()
         cursor.execute("SELECT * FROM teams WHERE team_number=?", (number,))
         existing_user = cursor.fetchone()
 
         if existing_user is not None:
-            return False
+            return None
 
         # Insert the new user into the database
         cursor.execute("INSERT INTO teams (name, team_number) VALUES (?, ?)", (name, number,))
@@ -196,15 +197,15 @@ def store_new_team(name: str, number: int, created_by_id: int) -> bool:
 
         if team_id is None: # Ideally, should never happen
             print("ERROR: Storing a new team returned no id")
-            return False
+            return None
         
-        cursor.execute("INSERT INTO users_teams (user_id, team_id, role) VALUES (?, ?, 1)", (created_by_id, team_id,))
+        print(team_id, created_by_id)
+        cursor.execute("UPDATE users SET team_id=?, team_role=1 WHERE rowid=?", (team_id, created_by_id,))
         conn.commit()
+        return {'id': cursor.lastrowid, 'name': name}
     finally:
         # Release the connection back to the pool
         release_connection(conn)
-
-    return True
 
 def store_scheduled_match(event_code: str, scheduled_match_data: dict, season: int = 2024) -> bool:
     """
@@ -334,3 +335,51 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict[MatchKey, dict[
     finally:
         # Release the connection back to the pool
         release_connection(conn)
+
+def get_user_team(user_id: int) -> UserTeam:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role FROM users u INNER JOIN teams t ON u.team_id = t.rowid WHERE u.rowid = ?;", (user_id,))
+        team = cursor.fetchone()
+
+        if team is None:
+            return None 
+        
+        return {'id': team[0], 'name': team[1], 'role': team[2]}
+    finally: 
+        release_connection(conn)
+
+def update_team(team: Team) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        print(team['name'])
+        cursor.execute("UPDATE teams SET name=? WHERE rowid=?", (team['name'], team['id'],))
+        conn.commit()
+
+        return True 
+    finally:
+        release_connection(conn)
+
+def remove_user(user_id: int) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET team_id = NULL, team_role = NULL WHERE rowid=?", (user_id, ))
+        conn.commit()
+
+        return True 
+    finally:
+        release_connection(conn)
+
+def add_user(team: Team, email: str) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE users SET team_id = ?, team_role = 0 WHERE email=?", (team['id'], email, ))
+        conn.commit()
+
+        return True 
+    finally:
+        release_connection(conn)     
