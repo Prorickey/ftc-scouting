@@ -1,8 +1,8 @@
 from flask import Blueprint, g, jsonify, make_response, request
 
-from database import store_new_team
+from R import UserSession, UserTeam
+from database import get_user_team, store_new_team, update_team
 from middlware import authenticated
-
 
 teams = Blueprint('teams', __name__)
 
@@ -28,3 +28,24 @@ def create_team():
         return make_response(jsonify({'message': 'successfully created team', 'team': res}), 200)
     else:
         return make_response(jsonify({'error': "failed to create team; team may already exist"}), 400)
+    
+@teams.route("/update", methods=["POST"])
+@authenticated
+def edit_team():
+    user: UserSession = g.user
+    team: UserTeam = get_user_team(user['id'])
+
+    if team.role != 1: # Check if they are an admin here
+        return make_response(jsonify({'error': 'insufficient permissions'}, 403))
+
+    body = request.get_json()
+
+    if name := body.get("name") is not None:
+        team.name = name 
+
+    if update_team(team):
+        return make_response(jsonify({'message': 'sucessfully updated team'}), 200)
+    else:
+        return make_response(jsonify({'error': 'failed to update team'}))
+    
+

@@ -19,6 +19,11 @@ class Team(TypedDict):
     id: int 
     name: str
 
+class UserTeam(TypedDict):
+    id: int 
+    name: str
+    role: int
+
 class UserSession(TypedDict):
     id: int
     name: str

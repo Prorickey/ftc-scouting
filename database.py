@@ -6,7 +6,7 @@ import string
 from functools import reduce
 from helper import *
 
-from R import Team
+from R import Team, UserTeam
 
 schema_file = "schema.sql"
 
@@ -199,7 +199,7 @@ def store_new_team(name: str, number: int, created_by_id: int) -> Team:
             print("ERROR: Storing a new team returned no id")
             return None
         
-        cursor.execute("INSERT INTO users_teams (user_id, team_id, role) VALUES (?, ?, 1)", (created_by_id, team_id,))
+        cursor.execute("UPDATE users SET team_id=?, team_role=1 WHERE id=?", (created_by_id, team_id,))
         conn.commit()
         return {'id': cursor.lastrowid, 'name': name}
     finally:
@@ -333,4 +333,29 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict[MatchKey, dict[
         return {}
     finally:
         # Release the connection back to the pool
+        release_connection(conn)
+
+def get_user_team(user_id: int) -> UserTeam:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role FROM users LEFT JOIN teams t ON u.team_id = t.id WHERE u.id = ?;", (user_id,))
+        team = cursor.fetchone()
+
+        if team is None:
+            return None 
+        
+        return {'id': team[0], 'name': team[1], 'role': team[2]}
+    finally: 
+        release_connection(conn)
+
+def update_team(team: Team) -> bool:
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("UPDATE team SET name=? WHERE id=?", (team.name, team.id,))
+        cursor.commit()
+
+        return True 
+    finally:
         release_connection(conn)
