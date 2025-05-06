@@ -270,6 +270,8 @@ class MatchKey:
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
 
+SCORE_FIELDS_2024 = ['robot1Auto', 'robot2Auto', 'autoSampleNet', 'autoSampleLow', 'autoSampleHigh', 'autoSpecimenLow', 'autoSpecimenHigh', 'teleopSampleNet', 'teleopSampleLow', 'teleopSampleHigh', 'teleopSpecimenLow', 'teleopSpecimenHigh', 'robot1Teleop', 'robot2Teleop', 'minorFouls', 'majorFouls', 'autoSamplePoints', 'autoSpecimenPoints', 'teleopSamplePoints', 'teleopSpecimenPoints', 'teleopParkPoints', 'teleopAscentPoints', 'autoPoints', 'teleopPoints', 'endGamePoints', 'foulPointsCommitted', 'preFoulTotal', 'totalPoints']
+
 def get_match_scores(event_code: str = None, season: int = 2024) -> dict[MatchKey, dict[str, Any]]:
     """
     Gets all score statistics from every match at the event for the given season.
@@ -282,7 +284,6 @@ def get_match_scores(event_code: str = None, season: int = 2024) -> dict[MatchKe
         Key: a MatchKey
         Value: dictionary where key = statistic (from FTC event API) and value = its value
     """
-    fields = ['robot1Auto', 'robot2Auto', 'autoSampleNet', 'autoSampleLow', 'autoSampleHigh', 'autoSpecimenLow', 'autoSpecimenHigh', 'teleopSampleNet', 'teleopSampleLow', 'teleopSampleHigh', 'teleopSpecimenLow', 'teleopSpecimenHigh', 'robot1Teleop', 'robot2Teleop', 'minorFouls', 'majorFouls', 'autoSamplePoints', 'autoSpecimenPoints', 'teleopSamplePoints', 'teleopSpecimenPoints', 'teleopParkPoints', 'teleopAscentPoints', 'autoPoints', 'teleopPoints', 'endGamePoints', 'foulPointsCommitted', 'preFoulTotal', 'totalPoints']
     # SELECT * FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0;
     
     # Grab a connection from the pool
@@ -290,15 +291,15 @@ def get_match_scores(event_code: str = None, season: int = 2024) -> dict[MatchKe
     try:
         cursor = conn.cursor()
         if event_code == None:
-            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE season=?"
+            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(SCORE_FIELDS_2024)} FROM scores WHERE season=?"
             cursor.execute(query, (season,))
         else:
-            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE eventCode=? AND season=?"
+            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(SCORE_FIELDS_2024)} FROM scores WHERE eventCode=? AND season=?"
             cursor.execute(query, (event_code, season))
 
         scores = cursor.fetchall()
 
-        return {MatchKey(event_code=score[0], match_level=score[1], match_series=score[2], match_number=score[3], alliance=score[4], season=season): {fields[i]: score[5+i] for i in range(len(fields))} for score in scores}
+        return {MatchKey(event_code=score[0], match_level=score[1], match_series=score[2], match_number=score[3], alliance=score[4], season=season): {SCORE_FIELDS_2024[i]: score[5+i] for i in range(len(SCORE_FIELDS_2024))} for score in scores}
     except Exception as e:
         print(e)
         return {}

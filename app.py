@@ -2,11 +2,16 @@
 import database
 import R
 from routes import create_app
+from stats import epa
 
 app = create_app()
 
 # Initialize the SQLite database
 database.init()
+
+# Initialize EPA
+epa.init()
+epa.season_epa()
 
 # Connect to Redis
 if R.init() == False:

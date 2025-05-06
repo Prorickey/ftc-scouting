@@ -100,6 +100,17 @@ def get_epa(team: int, time: float = None):
                 latest_epa = epa
         return latest_epa
 
+def get_all_epas(team: int):
+    """
+    Gets all historical EPAs for a team.
+
+    Args:
+        team: the team whose EPA should be retrieved
+    
+    Returns a dict where the key is the time and the value is the EPA at that time.
+    """
+    return {k.start_time: epa for (k, epa) in __historical_epas[team]}
+
 """
 No longer zero-sum
 ??? idk how to implement this
