@@ -8,12 +8,15 @@ from stats import opr, epa
 # Create a Blueprint instance
 stats = Blueprint('stats', __name__)
 
-@stats.route("/opr/2024/<event_code>/<statistic>", methods=["GET"])
-def opr_route(event_code: str, statistic: str):
+@stats.route("/opr/<season>/<event_code>/<statistic>", methods=["GET"])
+def opr_route(season: str, event_code: str, statistic: str):
     """
     Calculates the OPR for all teams at an event.
     """
     try:
+        if season != "2024":
+            return make_response("2024 is the only season supported", 400)
+        
         if statistic is None:
             return make_response("missing statistic to get OPR for", 400)
         
@@ -28,12 +31,18 @@ def opr_route(event_code: str, statistic: str):
         print(err)
         return make_response("internal server error", 500)
 
-@stats.route("/epa/2024/<team>", methods=["GET"])
-def epa_route(team: str):
+@stats.route("/epa/<season>/<team>", methods=["GET"])
+def epa_route(season: str, team: str):
     """
-    Calculates the current EPA for a single team, optionally at a given time.
+    Calculates the EPA for a single team.
+     
+    If query string parameter time is provided, returns the EPA at that time.
+    Otherwise, returns a dictionary where key = time and value = EPA at that time.
     """
     try:
+        if season != "2024":
+            return make_response("2024 is the only season supported", 400)
+        
         if not team.isnumeric():
             return make_response("team is not numeric", 400)
         

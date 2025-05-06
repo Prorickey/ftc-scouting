@@ -3,6 +3,7 @@ import database
 import R
 from routes import create_app
 from stats import epa
+import time
 
 app = create_app()
 
@@ -10,8 +11,11 @@ app = create_app()
 database.init()
 
 # Initialize EPA
+print("Initializing EPA, this might take a while...")
+start = time.time()
 epa.init()
 epa.season_epa()
+print(f"EPA initialized in {time.time() - start} seconds")
 
 # Connect to Redis
 if R.init() == False:
