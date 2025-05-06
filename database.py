@@ -5,6 +5,7 @@ import hashlib
 import string
 from functools import reduce
 from helper import *
+import time
 
 schema_file = "schema.sql"
 
@@ -251,13 +252,14 @@ class MatchKey:
     alliance: str
     season: int = 2024
 
-    def __init__(self, event_code: str, match_level: str, match_series: int, match_number: int, alliance: str, season: int = 2024):
+    def __init__(self, event_code: str, match_level: str, match_series: int, match_number: int, alliance: str, season: int = 2024, start_time: float = None):
         self.event_code = event_code
         self.match_level = match_level
         self.match_series = match_series
         self.match_number = match_number
         self.alliance = alliance
         self.season = season
+        self.start_time = start_time
 
     def __repr__(self) -> str:
         return f'MatchKey(event_code="{self.event_code}", match_level="{self.match_level}", match_series={self.match_series}, match_number={self.match_number}, alliance="{self.alliance}", season={self.season})'
@@ -268,7 +270,7 @@ class MatchKey:
     def __eq__(self, other) -> bool:
         return self.__hash__() == other.__hash__()
 
-def get_match_scores(event_code: str, season: int = 2024) -> dict[MatchKey, dict[str, Any]]:
+def get_match_scores(event_code: str = None, season: int = 2024) -> dict[MatchKey, dict[str, Any]]:
     """
     Gets all score statistics from every match at the event for the given season.
 
@@ -287,13 +289,16 @@ def get_match_scores(event_code: str, season: int = 2024) -> dict[MatchKey, dict
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        query = f"SELECT matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE eventCode=? AND season=?"
-
-        cursor.execute(query, (event_code, season))
+        if event_code == None:
+            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE season=?"
+            cursor.execute(query, (season,))
+        else:
+            query = f"SELECT eventCode, matchLevel, matchSeries, matchNumber, alliance, {', '.join(fields)} FROM scores WHERE eventCode=? AND season=?"
+            cursor.execute(query, (event_code, season))
 
         scores = cursor.fetchall()
 
-        return {MatchKey(event_code=event_code, match_level=score[0], match_series=score[1], match_number=score[2], alliance=score[3], season=season): {fields[i]: score[4+i] for i in range(len(fields))} for score in scores}
+        return {MatchKey(event_code=score[0], match_level=score[1], match_series=score[2], match_number=score[3], alliance=score[4], season=season): {fields[i]: score[5+i] for i in range(len(fields))} for score in scores}
     except Exception as e:
         print(e)
         return {}
@@ -301,7 +306,7 @@ def get_match_scores(event_code: str, season: int = 2024) -> dict[MatchKey, dict
         # Release the connection back to the pool
         release_connection(conn)
 
-def get_match_teams(event_code: str, season: int = 2024) -> dict[MatchKey, dict[int, tuple[str, bool]]]:
+def get_match_teams(event_code: str = None, season: int = 2024) -> dict[MatchKey, dict[int, tuple[str, bool]]]:
     """
     Retrieves teams playing in each match.
 
@@ -319,17 +324,22 @@ def get_match_teams(event_code: str, season: int = 2024) -> dict[MatchKey, dict[
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        query = f"SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField FROM matches WHERE eventCode=? AND season=?"
-
-        cursor.execute(query, (event_code, season))
+        if event_code == None:
+            query = f"SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField, actualStartTime FROM matches WHERE season=? ORDER BY DATETIME(actualStartTime)"
+            cursor.execute(query, (season,))
+        else:
+            query = f"SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField, actualStartTime FROM matches WHERE eventCode=? AND season=? ORDER BY DATETIME(actualStartTime)"
+            cursor.execute(query, (event_code, season))
 
         matches = cursor.fetchall()
 
-        individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, alliance=station[:-1], season=season): {team_number: (station, on_field)}}
-                            for (event_code, match_level, match_series, match_number, team_number, station, on_field) in matches]
+        # note: match start time is in local time zone :/
+        individual_dicts = [{MatchKey(event_code, match_level, match_series, match_number, alliance=station[:-1], season=season, start_time=time.mktime(time.strptime(actualStartTime if "." not in actualStartTime else actualStartTime[:actualStartTime.index(".")], "%Y-%m-%dT%H:%M:%S"))): {team_number: (station, on_field)}}
+                            for (event_code, match_level, match_series, match_number, team_number, station, on_field, actualStartTime) in matches]
         
         return reduce(lambda current_dict, new_dict: merge_with(merge_left, current_dict, new_dict), individual_dicts)
-    except:
+    except Exception as e:
+        print(e)
         return {}
     finally:
         # Release the connection back to the pool

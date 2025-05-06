@@ -41,7 +41,8 @@ def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True)
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    # JUST URLENCODE IT
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -70,7 +71,8 @@ def cache_matches(event_code: str, season: int = 2024) -> bool:
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    # JUST URLENCODE IT
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -100,7 +102,8 @@ def cache_schedule(event_code: str, season: int = 2024, qual_matches: bool = Tru
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    # JUST URLENCODE IT
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -116,3 +119,57 @@ def cache_schedule(event_code: str, season: int = 2024, qual_matches: bool = Tru
         is_good = is_good and database.store_scheduled_match(event_code, match, season=season)
 
     return is_good
+
+def get_all_events(season: int = 2024) -> list[str]:
+    """
+    Retrieves a list of all event codes for a given season from the FTC Event API.
+
+    Args:
+        season: the year to look for events in
+    
+    Returns a list of event codes for `season` if successful, and an empty list if there was an error.
+    """
+    season = int(season)
+
+    if __auth is None:
+        return []
+    
+    try:
+        event_listings_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/events", auth=__auth).json()
+    except:
+        return []
+    
+    try:
+        return list(map(lambda event: event["code"], event_listings_data["events"]))
+    except:
+        return []
+
+import time
+
+# Failed after 193 events on "NL'HKO"
+# Stopping after ROCMP
+# Failed at tempclone-1693972074
+
+def cache_all_events(season: int = 2024) -> bool:
+    # event_codes = get_all_events(season)
+    event_codes = ['USMNVAV2', 'USMIAAV', 'USNJSOPD', 'USNYEXUTKO', 'USAKFAKO', 'GBHUS', 'USNDBIKO', 'USPALAWS', 'USMITCOS3', 'USARLRAS', 'USMIUCOS', 'USTXSAS1', 'USTXLUV', 'USCHSHAKO', 'USCANOSJWS', 'USCTSOS1', 'USFLPLKO', 'USNVLVS', 'USMITEKO', 'USPAPHWS2', 'USMIFRKO', 'GBBES1', 'USMIFRKO2', 'USOKADS', 'USCHSBEKO', 'USARTBS', 'FPEMX', 'USTXREV', 'GBBES2', 'USTNKNKO', 'USSCCOS', 'USMNVAV', 'USILCHKO', 'USMANAKO', 'USORPOWS1', 'USMNAVS', 'USNYEXBUKO', 'USMIHOKO2', 'USCANOSJV', 'USMICAKO', 'USNJPHS2', 'USFLDBKO', 'FPEEU', 'USDEDOS', 'USPALAWS7', 'GBBOS', 'USMSGUPD1', 'USTXHAS', 'USIACRKO', 'BRREOS', 'USNYEXCOKO', 'USNYEXPEKO', 'USMILAV', 'USFLJAKO', 'USMOKSCHKO', 'USMIAAOS', 'USMIMCKO', 'USKYRAKO', 'USORHIKO', 'USOKMUKO', 'USPAEXKO', 'GBEDS1', 'USNDFAKO', 'USNJPHV', 'USIADMS', 'FPERR', 'USCALAMOKO', 'USNYNYNYWS3', 'USCOLOS', 'GBGLS', 'USFLBRS', 'USCOLIKO', 'USTNNAKO', 'USILEDKO', 'USSCCHS', 'USNVLVWS2', 'USILPEKO', 'USGAATKO', 'USVTM(KO', 'FPECRI', 'USMIPOOS', 'USCASDSDKO', 'USNHNAS', 'USNVREWS2', 'USFLFLS', 'USGAWRKO', 'USPAPHWS3', 'USTXFMV', 'USLATBKO', 'USPALAWS6', 'USNJUNWS', 'TRSIKO', 'USKYBGKO', 'USMOKSROKO', 'USCODEWS', 'USNVLVKO', 'GBCMP', 'USCASDDMOS', 'USALHUDE', 'GBOMS', 'USMILOKO', 'USWIMUOS', 'USNMALKO', 'NLROS', 'USNYNYNYWS6', 'CAABEDKO', 'USCALSLAS', 'USWIMAKO2', 'GBABS', 'USMIDEV', 'USMSOXS1', 'USOKOCS2', 'USTXAUS', 'USILSCKO', 'USCTSTOS1', 'USOHAUOS', 'USMIMAKO2', 'USAKFAKO2', 'LYBEKO', 'CABCVAKO', 'USALHUKO', 'USDEWIS2', 'USSCGRS', 'CAABCAKO', 'USMIMDM1', 'USNJETWS', 'USCHSCHKO', 'USINBLKO', 'ZATZS', 'USTXCCOS2', 'USOKALS', 'USFLORKO', 'GBBRS', 'CABCVIV', 'USFLNIKO', 'CAABEDOS', 'USORROKO', 'USTXCCOS3', 'USCOGRS', 'USPAYOKO', 'USWARIKO', 'GBCHS', 'USMIPOV', 'USTXLUV2', 'USMSPEPD1', 'USNDBIWS', 'ITBOKO', 'USDEDOKO', 'USTXATKO', 'USWIMAKO', 'USMITCKO', 'USMSFLKO', 'USAZTEKO', 'GBLOKO', 'USRIPRKO', 'USNCDUOS', 'USCHSRIKO', 'USMOKSKCKO', 'USWIMIKO', 'USOHDAKO', 'ROBUKO', 'USOHLOKO', 'USSCCOKO', 'USMOKSSLKO', 'USINWLKO', 'USMINBKO', 'USTXAUS2', 'USFLSEKO', 'USMITCOS', 'USARBEKO', 'USPALAWS2', 'USTXLUS3', 'USNDBIWS2', 'USNYNYNYS1', 'USTXFMS', 'USAKJUS1', 'CABCVIS1', 'USNYEXPOKO', "NL'HKO", 'USNVREKO', 'USVTSBKO', 'USMITCOS1', 'USMIAAKO', 'USIANOKO', 'USCOFCS', 'USIDFIKO', 'USFLFMS', 'USAKANKO', 'USIDJES', 'USNJPHS1', 'USTXWAS', 'USTXAUKO', 'USDEWIS4', 'USMITCOS2', 'USWABOS1', 'tempclone-1693972074', 'USILRIKO', 'USTXCCOS4', 'USNYNYNYWS1', 'USPAKSKO', 'CABCVIWS', 'USIACOS', 'USOHKIKO', 'USMOKSKNKO', 'USIATASM7', 'USMOKSCNTM6', 'GBOXS', 'USIACRS1', 'USNYNYNYWS2', 'USMOKSCGKO', 'USTXFMOS', 'USWYCAS', 'USTXCCOS5', 'USHIKAKO', 'USNMALKO2', 'USNYLISBKO', 'USNYNYNYWS5', 'USTXFTKO', 'BRRJQ', 'USTXHOSPDE', 'USNVLVWS1', 'GBGLS2', 'LYSAKO', 'USNJLIKO', 'GBLOS', 'USCHSLAKO', 'USMINOKO', 'USNJMHPD', 'USORROS', 'GBBIS', 'LYTOKO', 'USMOKSSPKO', 'USOKMUOS', 'USALORWS', 'USMSOXV', 'LYBAKO', 'USNJETPD', 'USNJNEPD', 'USPALAWS4', 'USTXODS', 'USFLWPKO', 'USARBEOS', 'GBLIS', 'USFLTAS', 'USMIBHKO', 'CAONPIV', 'USWAAUKO', 'USMITRV', 'FPEMI', 'USTXHOSLS', 'USCHSMCKO', 'USPALAWS5', 'USIAICV', 'USMIHOKO', 'USNJBRDE', 'LYTRKO', 'USNYNYNYWS7', 'USCOLAS', 'USINOSKO', 'USNJTEPD', 'USOHNEKO', 'AUWES', 'USFLROWS', 'USMIMAKO', 'USNHWOS', 'USOHSHOS', 'USNYEXBSKO', 'USILWCKO', 'USNHWIS', 'GBHES', 'USMIFLKO', 'USAKJUKO', 'USNJHPPD', 'USFLTAKO', 'USPAPHKO', 'USTXWAKO', 'USCASDSDV1', 'USIAICWS', 'USMOKSSCKO', 'USOREUKO', 'USIDMEKO', 'USMIDEOS', 'USCHSLAKO1', 'FPECA', 'USCOGJS', 'ROBUOS1', 'GBEDS', 'USMNBLKO', 'USTXSAKO', 'USIABERM3', 'USTXHOPAS1', 'USALHUV', 'USNJHIKO', 'USNHMAKO', 'USPAPHWS4', 'USIAWMS', 'USINAVKO', 'GBSTS', 'USMIUCV', 'USPALAKO', 'USILROKO', 'USTXLUKO', 'USNYNYNYWS4', 'USMTKAKO', 'USTXCCKO', 'USORLOKO', 'CABCVIS2', 'USAKJUS2', 'USDEWIS3', 'RONM6', 'FPECR', 'USOKOCKO', 'USTXPLV', 'USCANOSMOS', 'USTXAUS3', 'USWABEKO', 'USIAICS', 'USWAKEV', 'USCHSDCKO', 'USCHSNOKO', 'ROSM10', 'USCALAOJKO', 'USALHUS', 'USMOKSCAKO', 'USDEWIS1', 'USCOMOS', 'USWAOLKO', 'USPALAWS3', 'USCALAWIKO', 'USTXSAOS1', 'USPALAWS1', 'GBSUS', 'USPAMAKO', 'USFLORS', 'GBSTS2', 'USMITROS', 'USNVREWS1', 'NFSJS', 'USOKOCS1', 'USPAPHWS1', 'USMIOCM1', 'USWALLKO']
+
+    print(f"Preparing to cache {len(event_codes)} events")
+
+    if event_codes == []:
+        return False
+    
+    for code in event_codes:
+        print(f"Caching qual scores from {code}")
+        if not cache_scores(code, season, qual_matches=True): return False
+        print(f"Caching elim scores from {code}")
+        if not cache_scores(code, season, qual_matches=False): return False
+        print(f"Caching qual schedule from {code}")
+        if not cache_schedule(code, season, qual_matches=True): return False
+        print(f"Caching elim schedule from {code}")
+        if not cache_schedule(code, season, qual_matches=False): return False
+        print(f"Caching matches from {code}")
+        if not cache_matches(code, season): return False
+        print("-------------------------------------")
+    
+    return True
