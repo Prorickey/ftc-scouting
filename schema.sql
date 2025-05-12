@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS teams (
     id          SERIAL PRIMARY KEY,
     name        TEXT NOT NULL,
     team_number INTEGER NOT NULL UNIQUE,
+    team_code   TEXT NOT NULL,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

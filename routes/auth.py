@@ -1,22 +1,21 @@
 import uuid
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request, render_template, redirect, url_for
 
 import R
 import database
 
 # Create a Blueprint instance
-auth = Blueprint('auth', __name__)
+auth = Blueprint('auth', __name__, template_folder="../templates")
 
 @auth.route("/register", methods=["POST"])
 def register():
     try:
-        body = request.get_json()
-        email = body.get('email')
-        password = body.get('password')
-        name = body.get('name')
+        email = request.form.get('email')
+        password = request.form.get('password')
+        name = request.form.get('name')
 
         if email is None or password is None or name is None:
-            return make_response(jsonify({'error': "missing email, password, or name"}), 400)
+            return render_template("register.j2", error="Please fill in all fields: email, password, and name")
         
         userid = database.register(email, password, name)
         if userid is not None:
@@ -25,25 +24,24 @@ def register():
             
             R.set_session(token, userid, email)
 
-            # Set the session cookie in the response
-            response = make_response(jsonify({'message': "successfully registered user"}), 200)
+            # Set the session cookie and redirect to homepage
+            response = redirect(url_for('content.homepage'))
             response.set_cookie('session', str(token))
             return response
         else:
-            return make_response(jsonify({'error': "failed to create user"}), 400)
+            return render_template("register.j2", error="Registration failed. Email may already be in use.")
     except Exception as err:
         print(err)
-        return make_response(jsonify({'error': "internal server error"}), 500)
+        return render_template("register.j2", error="An internal server error occurred")
     
 @auth.route("/login", methods=["POST"])
 def login():
     try:
-        body = request.get_json()
-        email = body.get('email')
-        password = body.get('password')
+        email = request.form.get('email')
+        password = request.form.get('password')
 
         if email is None or password is None:
-            return make_response(jsonify({'error': "missing email or password"}), 400)
+            return render_template("login.j2", error="Please fill in both email and password fields")
         
         userid = database.login(email, password)
         if userid is not None:
@@ -53,12 +51,33 @@ def login():
             # Store the session data in Redis
             R.set_session(token, userid, email)
 
-            # Set the session cookie in the response
-            response = make_response(jsonify({'message': 'successfully logged user in'}), 200)
+            # Set the session cookie and redirect to homepage
+            response = redirect(url_for('content.homepage'))
             response.set_cookie('session', str(token))
             return response
         else:
-            return make_response(jsonify({'error': "failed to login. password or email may be incorrect"}), 400)
+            return render_template("login.j2", error="Invalid email or password. Please try again.")
     except Exception as err:
         print(err)
-        return make_response(jsonify({'error': "internal server error"}), 500)
+        return render_template("login.j2", error="An internal server error occurred")
+
+@auth.route("/logout", methods=["GET"])
+def logout():
+    # Get the current session token from cookies
+    session_token = request.cookies.get('session')
+    
+    # Create response that redirects to login page
+    response = redirect(url_for('content.login_page'))
+    
+    # If there's a session token, delete it from Redis
+    if session_token:
+        try:
+            # Remove session data from Redis
+            R.delete_session(session_token)
+        except:
+            pass  # If deletion fails, just continue
+    
+    # Clear the session cookie
+    response.set_cookie('session', '', expires=0)
+    
+    return response

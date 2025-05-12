@@ -191,9 +191,11 @@ def store_new_team(name: str, number: int, created_by_id: int) -> Team:
 
         if existing_user is not None:
             return None
+        
+        code = generate_code()
 
         # Insert the new user into the database
-        cursor.execute("INSERT INTO teams (name, team_number) VALUES (?, ?)", (name, number,))
+        cursor.execute("INSERT INTO teams (name, team_code, team_number) VALUES (?, ?, ?)", (name, code, number,))
         team_id = cursor.lastrowid
 
         if team_id is None: # Ideally, should never happen
@@ -203,7 +205,7 @@ def store_new_team(name: str, number: int, created_by_id: int) -> Team:
         print(team_id, created_by_id)
         cursor.execute("UPDATE users SET team_id=?, team_role=1 WHERE rowid=?", (team_id, created_by_id,))
         conn.commit()
-        return {'id': cursor.lastrowid, 'name': name}
+        return {'id': cursor.lastrowid, 'name': name, 'code': code}
     finally:
         # Release the connection back to the pool
         release_connection(conn)
@@ -394,3 +396,30 @@ def add_user(team: Team, email: str) -> bool:
         return True 
     finally:
         release_connection(conn)     
+
+def get_user_by_id(user_id):
+    """
+    Get full user information from the database by ID
+    """
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT rowid, name, email, team_id, team_role FROM users WHERE rowid=?", (user_id,))
+        user_data = cursor.fetchone()
+        
+        if user_data is None:
+            return None
+            
+        # Get associated team information if available
+        user_team = None
+        if user_data[3]:  # If team_id exists
+            user_team = get_user_team(user_id)
+            
+        return {
+            "id": user_data[0],
+            "name": user_data[1],
+            "email": user_data[2],
+            "team": user_team
+        }
+    finally:
+        release_connection(conn)

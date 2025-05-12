@@ -2,6 +2,8 @@
 """
 Some useful functions not part of the standard library (mostly cool functional constructs to cope with Python).
 """
+import secrets
+import string
 from typing import Callable, Any
 from functools import reduce
 
@@ -47,3 +49,17 @@ def flatten(lists: list[list]) -> list:
     Returns the flattened list.
     """
     return reduce(lambda a, b: a+b, lists, [])
+
+def generate_code(length=8):
+    """
+    Generate a secure random code of specified length (default 8) 
+    consisting of uppercase letters and numbers.
+    """
+    
+    # Define the character set: uppercase letters and digits
+    characters = string.ascii_uppercase + string.digits
+    
+    # Generate a random string of the specified length
+    code = ''.join(secrets.choice(characters) for _ in range(length))
+    
+    return code
