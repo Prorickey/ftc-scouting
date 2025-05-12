@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+    <head>
+        <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+        <script src="opr.js"></script>
+    </head>
+
+    <body>
+        <!-- TODO make both event and stats templated -->
+        <select name="event" id="event">
+            <option value="FTCCMP1">da Vinci</option>
+            <option value="FTCCMP1OCHO">Ochoa</option>
+            <option value="USNCCMP">NC Championship</option>
+        </select>
+        <select name="stats" id="stats">
+            <option value="totalPoints">Total Points</option>
+            <option value="autoPoints">Auto Points</option>
+            <option value="autoSpecimenPoints">Auto Specimen Points</option>
+            <option value="foulPointsCommitted">Foul Points Committed</option>
+        </select>
+        <button onclick="plotOPR(2024, document.getElementById('event').value, document.getElementById('stats').value);">Load OPR chart</button>
+        <div id="oprChart"></div>
+    </body>
+</html>

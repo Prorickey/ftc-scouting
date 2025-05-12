@@ -111,10 +111,8 @@ def get_all_epas(team: int):
     """
     return {k.start_time: epa for (k, epa) in __historical_epas[team]}
 
-"""
-No longer zero-sum
-??? idk how to implement this
-First, a conceptual point. Elo is inherently zero-sum, meaning that the sum of the ratings of all teams is constant. For a team's rating to increase, another team's rating must decrease. As the season progresses, the average match score increases, but the average rating does not (ignoring selection bias in district championships onwards). This means an Elo of 1500 in Week 1 is not the same as an Elo of 1500 in Week 5. The EPA model is conciously designed to not be zero-sum, so that the average rating is meaningful and increases as the season progresses. Instead of computing the rating update, and spreading it across the alliance, the EPA update is computed for each team individually. This allows modifications to the update function on a per-team basis.
-"""
-
-# Relevant code from Statbotics: https://github.com/avgupta456/statbotics/blob/bfcd4b18171b2ab0a32a5e545966a66412bd424f/backend/src/models/epa/main.py#L180
+def get_ranks():
+    """
+    Returns a dictionary where the key is the team and the value is their EPA rank.
+    """
+    return {team: (idx + 1) for (idx, team) in enumerate(list(map(lambda t: t[0], sorted(__epa_dict.items(), key=lambda t: t[1], reverse=True))))}

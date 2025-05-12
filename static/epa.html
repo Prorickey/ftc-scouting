@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://cdn.plot.ly/plotly-3.0.1.min.js"></script>
+        <script src="epa.js"></script>
+    </head>
+
+    <body>
+        <input id="team" type="number" onchange="updateEPA();"/>
+        <span id="epa"></span>
+        <span id="rank"></span>
+        <button onclick="updateEPA();">Load historical EPA chart</button>
+        <div id="epaChart"></div>
+    </body>
+</html>

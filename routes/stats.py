@@ -6,7 +6,7 @@ import database
 from stats import opr, epa
 
 # Create a Blueprint instance
-stats = Blueprint('stats', __name__)
+stats = Blueprint('stats', __name__, static_folder="../static")
 
 @stats.route("/opr/<season>/<event_code>/<statistic>", methods=["GET"])
 def opr_route(season: str, event_code: str, statistic: str):
@@ -51,6 +51,22 @@ def epa_route(season: str, team: str):
             return jsonify(epa.get_all_epas(int(team)))
         else:
             return jsonify(epa.get_epa(int(team), time=t))
+    except Exception as err:
+        print(err)
+        return make_response("internal server error", 500)
+
+@stats.route("/epa/<season>/ranks", methods=["GET"])
+def epa_ranks_route(season: str):
+    """
+    Returns current EPA rankings.
+     
+    Returns a dictionary where key = team and value = their EPA rank (1 = first).
+    """
+    try:
+        if season != "2024":
+            return make_response("2024 is the only season supported", 400)
+        
+        return jsonify(epa.get_ranks())
     except Exception as err:
         print(err)
         return make_response("internal server error", 500)
