@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, request, g, redirect, url_for, jsonify
+from flask import Blueprint, render_template, request, g, redirect, url_for, jsonify, send_file
 
 import R
 import database
 
-content = Blueprint('content', __name__, template_folder="../templates")
+content = Blueprint('content', __name__, template_folder="../templates", static_folder="../static")
 
 @content.route("/login")
 def login_page():
@@ -37,3 +37,16 @@ def homepage():
     
     # Render the homepage template with the full user details
     return render_template("homepage.j2", user=user)
+
+@content.route("/opr")
+def opr():
+    event_codes = database.get_event_codes()
+    return render_template("opr.j2", events=event_codes, fields=database.SCORE_FIELDS_2024)
+
+@content.route("/epa")
+def epa():
+    return render_template("epa.j2")
+
+@content.route("/explore_teams")
+def explore_teams():
+    return render_template("explore_teams.j2")

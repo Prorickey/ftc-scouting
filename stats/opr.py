@@ -5,25 +5,6 @@ from typing import Callable
 from functools import reduce
 from helper import *
 
-# Let's try calculating OPR
-# Need to set up a system of equations
-# q1_red1 + q1_red2 = red_score
-# q1_blue1 + q1_blue2 = blue_score
-# ....
-# Then format it into a matrix
-# Probably have each column be a team, then augment it with the output score I think?
-# e.g. two matches, team1+team2 score 80 vs team3+team4 score 60 | team2+team3 score 120 vs team1+team4 score 10
-# team1 team2 team3 team4 score
-# 1     1     0     0     80
-# 0     0     1     1     60
-# 0     1     1     0     120
-# 1     0     0     1     10
-# this seems right.
-# the matrix of ones and zeroes times the vector [team1 team2 team3 team4] = [team1 + team2 ; team3 + team4 ; team2 + team3 ; team1 + team4];
-
-# "just try stuff," as our keynote speaker eloquently stated today
-# premature optimization is the root of all evil
-
 def calc_opr_from_function(event_code: str, fn: Callable[[dict[database.MatchKey, dict[str, Any]]], float], season: int = 2024) -> dict:
     """
     Calculates OPR for every team in an event.
@@ -44,18 +25,14 @@ def calc_opr_from_function(event_code: str, fn: Callable[[dict[database.MatchKey
     alliance_matrix = np.zeros((len(match_scores), len(teams_at_event)), dtype=np.uint64)
     score_matrix = np.zeros((len(match_scores), 1), dtype=np.float64)
 
-    # alliance_matrix is the design matrix X
-    # we'll have a score_matrix Y of relevant stats for every alliance
-    # X*beta = Y
-    # X_pinv * Y = beta
+    # alliance_matrix * opr_matrix = score_matrix
+    # pseudoinverse(alliance_matrix) * score_matrix = opr_matrix
 
     for idx, key in enumerate(match_teams.keys()):
         if key not in match_scores:
             # probably didn't pull qual and playoff data from both
             return {}
-        # ` and match_teams[key][team][1]` is important, ensures a team actually played in that match
-        # Orange Alliance does not have this check and only looks at qual matches (i.e. to have our OPR match theirs, remove the check and continue if key.match_level != "QUALIFICATION")
-        # This is better though IMO
+        # ` and match_teams[key][team][1]` ensures a team actually played in that match
         alliance_matrix[idx] = list(map(lambda team: 1 if team in match_teams[key].keys() and match_teams[key][team][1] else 0, teams_at_event))
         score_matrix[idx] = fn(match_scores[key])
 

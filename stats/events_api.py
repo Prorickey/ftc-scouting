@@ -41,7 +41,7 @@ def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True)
     """
 
     season = int(season)
-    # JUST URLENCODE IT
+    
     if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
@@ -147,6 +147,8 @@ def get_all_events(season: int = 2024) -> list[str]:
 def cache_all_events(season: int = 2024) -> bool:
     """
     Caches data from all events for a given season (needed for EPA calculations).
+
+    Takes a long time.
     """
     event_codes = get_all_events(season)
 

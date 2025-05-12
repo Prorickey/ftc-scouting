@@ -10,6 +10,9 @@ __epa_dict = {}
 __teams = {}
 __scores = {}
 
+__done_initializing = False
+__season_loaded = False
+
 # https://www.statbotics.io/blog/epa
 
 def init():
@@ -18,7 +21,7 @@ def init():
 
     Must be called before doing any EPA calculations.
     """
-    global __teams, __scores, __epa_dict
+    global __teams, __scores, __epa_dict, __done_initializing
     database.init()
     __teams = database.get_match_teams() # should be sorted by time, not filtered by event code
     __scores = database.get_match_scores()
@@ -28,7 +31,7 @@ def init():
     
     january_matches = list(filter(lambda key: start_of_january <= key.start_time <= end_of_january, __teams.keys()))
 
-    # FRC: stddev of Week 1, so FTC is maybe stddev of January? idk
+    # FRC: stddev of Week 1, guess for FTC: stddev of January
     january_scores = [__scores[key]["totalPoints"] for key in january_matches]
 
     average_january_score = float(np.average(january_scores))
@@ -36,9 +39,10 @@ def init():
     # Set initial EPA to average "Week 1" score / 3
     __epa_dict = defaultdict(lambda: average_january_score / 3)
 
+    __done_initializing = True
+
 __historical_epas = defaultdict(lambda: [])
 
-# This is just point unit Elo for now
 def calc_epa(match_key: MatchKey):
     """
     Calculates the EPA updates from a single match.
@@ -74,10 +78,11 @@ def season_epa():
     """
     Calculates the EPA by analyzing every match stored in the database.
     """
-    global __teams
+    global __teams, __season_loaded
     sorted_match_keys = sorted(filter(lambda k: k.alliance == "Red", __teams.keys()), key=lambda k: k.start_time)
     for match_key in sorted_match_keys:
         calc_epa(match_key)
+    __season_loaded = True
 
 def get_epa(team: int, time: float = None):
     """
@@ -89,6 +94,9 @@ def get_epa(team: int, time: float = None):
     
     Returns a float storing the EPA of the team.
     """
+    if not __season_loaded:
+        return None
+    
     if time == None:
         return __epa_dict[team]
     else:
@@ -109,10 +117,12 @@ def get_all_epas(team: int):
     
     Returns a dict where the key is the time and the value is the EPA at that time.
     """
+    if not __season_loaded: return {}
     return {k.start_time: epa for (k, epa) in __historical_epas[team]}
 
 def get_ranks():
     """
     Returns a dictionary where the key is the team and the value is a tuple of (their EPA rank, their EPA).
     """
+    if not __season_loaded: return {}
     return {team: (idx + 1, __epa_dict[team]) for (idx, team) in enumerate(list(map(lambda t: t[0], sorted(__epa_dict.items(), key=lambda t: t[1], reverse=True))))}
