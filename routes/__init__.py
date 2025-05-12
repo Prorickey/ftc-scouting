@@ -2,14 +2,18 @@ from flask import Flask
 
 from .teams import teams
 from .auth import auth
+from .content import content
 from .stats import stats
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(__name__, static_folder="../static")
 
-    # Register Blueprints
+    # API Routes
     app.register_blueprint(auth, url_prefix='/api')
     app.register_blueprint(teams, url_prefix='/api/teams')
     app.register_blueprint(stats, url_prefix="/api/stats")
+
+    # Content Routes
+    app.register_blueprint(content, url_prefix="/")
 
     return app
