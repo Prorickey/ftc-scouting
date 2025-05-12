@@ -12,6 +12,9 @@
                 sortedTeams.forEach((team) => {
                     let teamRow = document.createElement("tr");
                     teamRow.className = "p-2.5 text-center text-white border-b border-gray-500 hover:";
+                    teamRow.addEventListener('click', function(e) {
+                        window.location = `epa.html?team=${team}`;
+                    });
                     let teamCol = document.createElement("td");
                     teamCol.className = "p-2.5";
                     teamCol.innerText = `${team}`;

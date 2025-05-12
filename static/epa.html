@@ -7,6 +7,11 @@
         <script>
             window.onload = async () => {
                 window.ranks = await getEPARanks(2024);
+                let urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.has("team")) {
+                    document.getElementById("team").value = urlParams.get("team");
+                    updateEPA();
+                }
             };
         </script>
     </head>
