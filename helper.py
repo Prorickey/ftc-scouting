@@ -18,6 +18,11 @@ def merge_with(fn: Callable[[Any, Any], Any], left_dict: dict, right_dict: dict)
     Returns the merged dictionary.
     """
     fn_ = lambda a,b: b if a == None else (a if b == None else fn(a,b))
+    if len(right_dict.keys()) == 1:
+        # speed optimization if the right dict only has one item
+        k = list(right_dict.keys())[0]
+        left_dict[k] = fn_(left_dict.get(k), right_dict.get(k))
+        return left_dict
     return {k: fn_(left_dict.get(k), right_dict.get(k)) for k in left_dict.keys() | right_dict.keys()}
 
 def merge_left(left_dict: dict, right_dict: dict) -> dict:

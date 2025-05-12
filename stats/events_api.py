@@ -41,7 +41,8 @@ def cache_scores(event_code: str, season: int = 2024, qual_matches: bool = True)
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    # JUST URLENCODE IT
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -70,7 +71,8 @@ def cache_matches(event_code: str, season: int = 2024) -> bool:
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -100,7 +102,8 @@ def cache_schedule(event_code: str, season: int = 2024, qual_matches: bool = Tru
     """
 
     season = int(season)
-    if not event_code.isalnum():
+    
+    if not event_code.replace("'", "").replace("-", "").replace("(","").replace(")","").isalnum():
         return False
     
     if __auth is None:
@@ -116,3 +119,53 @@ def cache_schedule(event_code: str, season: int = 2024, qual_matches: bool = Tru
         is_good = is_good and database.store_scheduled_match(event_code, match, season=season)
 
     return is_good
+
+def get_all_events(season: int = 2024) -> list[str]:
+    """
+    Retrieves a list of all event codes for a given season from the FTC Event API.
+
+    Args:
+        season: the year to look for events in
+    
+    Returns a list of event codes for `season` if successful, and an empty list if there was an error.
+    """
+    season = int(season)
+
+    if __auth is None:
+        return []
+    
+    try:
+        event_listings_data = requests.get(f"https://ftc-api.firstinspires.org/v2.0/{season}/events", auth=__auth).json()
+    except:
+        return []
+    
+    try:
+        return list(map(lambda event: event["code"], event_listings_data["events"]))
+    except:
+        return []
+
+def cache_all_events(season: int = 2024) -> bool:
+    """
+    Caches data from all events for a given season (needed for EPA calculations).
+    """
+    event_codes = get_all_events(season)
+
+    print(f"Preparing to cache {len(event_codes)} events")
+
+    if event_codes == []:
+        return False
+    
+    for code in event_codes:
+        print(f"Caching qual scores from {code}")
+        if not cache_scores(code, season, qual_matches=True): return False
+        print(f"Caching elim scores from {code}")
+        if not cache_scores(code, season, qual_matches=False): return False
+        print(f"Caching qual schedule from {code}")
+        if not cache_schedule(code, season, qual_matches=True): return False
+        print(f"Caching elim schedule from {code}")
+        if not cache_schedule(code, season, qual_matches=False): return False
+        print(f"Caching matches from {code}")
+        if not cache_matches(code, season): return False
+        print("-------------------------------------")
+    
+    return True

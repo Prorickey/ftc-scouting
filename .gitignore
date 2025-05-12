@@ -1,6 +1,5 @@
 venv/**
 *__pycache__
-database.db
 *.env
 
 # File needed for intellisense, but not for any function
