@@ -113,6 +113,6 @@ def get_all_epas(team: int):
 
 def get_ranks():
     """
-    Returns a dictionary where the key is the team and the value is their EPA rank.
+    Returns a dictionary where the key is the team and the value is a tuple of (their EPA rank, their EPA).
     """
-    return {team: (idx + 1) for (idx, team) in enumerate(list(map(lambda t: t[0], sorted(__epa_dict.items(), key=lambda t: t[1], reverse=True))))}
+    return {team: (idx + 1, __epa_dict[team]) for (idx, team) in enumerate(list(map(lambda t: t[0], sorted(__epa_dict.items(), key=lambda t: t[1], reverse=True))))}

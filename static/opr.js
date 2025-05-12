@@ -17,9 +17,23 @@ async function plotOPR(season, eventCode, statistic) {
         {
             x: sortedDictionaryKeysByValue(packet).map((val) => `team ${val}`),
             y: sortedDictionaryKeysByValue(packet).map((key) => packet[key]),
-            type: 'bar'
+            type: 'bar',
+            marker: {
+                color: sortedDictionaryKeysByValue(packet).map(() => '#F3F4F6')
+            }
         }
     ];
+
+    let layout = {
+        plot_bgcolor: '#1E2939',
+        paper_bgcolor: '#1E2939',
+        barcornerradius: '5',
+        font: {color: '#ffffff'}
+    };
+
+    let config = {
+        responsive: true
+    };
       
-    Plotly.newPlot('oprChart', data);
+    Plotly.newPlot('oprChart', data, layout, config);
 }
