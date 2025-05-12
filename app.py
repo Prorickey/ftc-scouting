@@ -22,4 +22,4 @@ threading.Thread(target=__init_epa).start()
 if R.init() == False:
     exit(1) # Message already printed
     
-app.run(port=8080, debug=True)
+app.run(host="0.0.0.0", port=8080, debug=True)

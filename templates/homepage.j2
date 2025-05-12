@@ -8,17 +8,33 @@
     </head>
     <body>
         <div class="container mx-auto px-4 py-8">
-            <div class="bg-white rounded-lg shadow-md p-6 mb-8 flex justify-between items-center">
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8 flex gap-x-4 items-center">
                 <div>
                     <h1 class="text-3xl font-bold mb-2">Hi, {{ user.name }}</h1>
                     <p class="text-lg text-gray-600">Welcome to the FTC Scouting Dashboard</p>
                 </div>
+                <div class="mx-auto"></div>
+                {% if team is none %}
+                <a href="/createteam" class="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg">
+                    Create Team
+                </a>
+                <form class="flex flex-row bg-blue-500 hover:bg-blue-600 rounded-lg" method="post" action="/api/teams/join">
+                    <input class="py-2 px-4 w-32 text-white border-r-2 border-gray-800" name="code" placeholder="CODE2025" />
+                    <input class="py-2 px-4 cursor-pointer text-white" type="submit" value="Join Team" />
+                </form>
+                {% endif %}
+                {% if anon %}
+                <a href="/login" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg">
+                    Login
+                </a>
+                {% else %}
                 <a href="/api/logout" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
                     Logout
                 </a>
+                {% endif %}
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-white rounded-lg shadow-md overflow-hidden">
                     <div class="p-6">
                         <h2 class="text-xl font-semibold mb-2">EPA Analytics</h2>
@@ -49,6 +65,145 @@
                     </div>
                 </div>
             </div>
+
+            {% if team %}
+            <div class="bg-white rounded-lg shadow-md overflow-hidden p-6">
+                <div class="flex flex-row items-center mb-6">
+                    <div>
+                        <p class="text-3xl font-semibold">
+                            {{ team.name }}
+                        </p>
+                        {% if team.role == 1 %}
+                        <div class="flex items-center mt-2">
+                            <span class="text-sm text-gray-500 mr-2">Team Code:</span>
+                            <span class="bg-gray-100 font-mono py-1 px-2 rounded text-sm">{{ team.code }}</span>
+                            <button onclick="copyTeamCode()" class="ml-2 text-blue-500 hover:text-blue-700 text-xs">
+                                Copy
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="mx-auto"></div>
+                    {% if team.role == 1 %}
+                    <a href="/api/teams/leave" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
+                        Delete Team
+                    </a>
+                    {% else %}
+                    <a href="/api/teams/leave" class="bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg">
+                        Leave Team
+                    </a>
+                    {% endif %}
+                </div>
+                
+                <h3 class="text-xl font-semibold mb-4">Team Members</h3>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-2 px-4 border-b text-left">Name</th>
+                                <th class="py-2 px-4 border-b text-left">Role</th>
+                                {% if team.role == 1 %}
+                                <th class="py-2 px-4 border-b text-left">Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-2 px-4 border-b">{{ member.name }}</td>
+                                <td class="py-2 px-4 border-b">
+                                    {% if member.role == 1 %}
+                                    <span class="text-blue-800 text-s font-semibold">Admin</span>
+                                    {% else %}
+                                    <span class="text-gray-800 text-s font-semibold">Member</span>
+                                    {% endif %}
+                                </td>
+                                {% if team.role == 1 and member.id != user.id %}
+                                <td class="py-2 px-4 border-b flex gap-2">
+                                    {% if member.role != 1 %}
+                                    <button 
+                                        onclick="promoteUser({{ member.id }})" 
+                                        class="bg-blue-500 hover:bg-blue-600 text-white py-1 px-2 rounded text-xs">
+                                        Promote
+                                    </button>
+                                    {% endif %}
+                                    <button 
+                                        onclick="kickUser({{ member.id }})" 
+                                        class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded text-xs">
+                                        Kick
+                                    </button>
+                                </td>
+                                {% elif team.role == 1 %}
+                                <td class="py-2 px-4 border-b">
+                                    <span class="text-gray-400 text-xs">You</span>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <script>
+                    function promoteUser(userId) {
+                        if (confirm('Are you sure you want to promote this user to admin?')) {
+                            fetch(`/api/teams/members/${userId}/promote`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.message) {
+                                    alert('User promoted successfully');
+                                    window.location.reload();
+                                } else {
+                                    alert('Error: ' + data.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Failed to promote user');
+                            });
+                        }
+                    }
+                    
+                    function kickUser(userId) {
+                        if (confirm('Are you sure you want to remove this user from the team?')) {
+                            fetch(`/api/teams/members/${userId}`, {
+                                method: 'DELETE'
+                            })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.message) {
+                                    alert('User removed successfully');
+                                    window.location.reload();
+                                } else {
+                                    alert('Error: ' + data.error);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Failed to remove user');
+                            });
+                        }
+                    }
+                    
+                    function copyTeamCode() {
+                        const teamCode = "{{ team.code }}";
+                        navigator.clipboard.writeText(teamCode)
+                            .then(() => {
+                                alert('Team code copied to clipboard!');
+                            })
+                            .catch(err => {
+                                console.error('Failed to copy team code:', err);
+                                alert('Failed to copy team code');
+                            });
+                    }
+                </script>
+            </div>
+            {% endif %}
         </div>
     </body>
 </html>

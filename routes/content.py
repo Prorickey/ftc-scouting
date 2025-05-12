@@ -18,25 +18,29 @@ def homepage():
     session_token = request.cookies.get('session')
 
     if not session_token:
-        # Redirect to login page if user is not logged in
-        return redirect(url_for('content.login_page'))
+        # Open page as anon user
+        return render_template("homepage.j2", user={'name': 'Anonymous User'}, anon=True)
     
     # Retrieve session info from Redis
     session = R.get_session(session_token)
 
     if not session:
-        # Redirect to login page if session token is invalid
-        return redirect(url_for('content.login_page'))
+        # Open page as anon user
+        return render_template("homepage.j2", user={'name': 'Anonymous User'}, anon=True)
     
     # Get complete user information from database using session ID
     user = database.get_user_by_id(session["id"])
     
     if not user:
-        # If user not found in database, clear session and redirect to login
-        return redirect(url_for('content.login_page'))
+        # Open page as anon user
+        return render_template("homepage.j2", user={'name': 'Anonymous User'}, anon=True)
+    
+    members = []
+    if user['team']:
+        members = database.get_team_members(user['id'])
     
     # Render the homepage template with the full user details
-    return render_template("homepage.j2", user=user)
+    return render_template("homepage.j2", user=user, team=user['team'], members=members)
 
 @content.route("/opr")
 def opr():
@@ -50,3 +54,15 @@ def epa():
 @content.route("/explore_teams")
 def explore_teams():
     return render_template("explore_teams.j2")
+
+@content.route("/createteam")
+def create_team_page():
+    session_token = request.cookies.get('session')
+    if not session_token:
+        return redirect(url_for('content.login_page'))
+    
+    session = R.get_session(session_token)
+    if not session:
+        return redirect(url_for('content.login_page'))
+    
+    return render_template("create_team.j2")
