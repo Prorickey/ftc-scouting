@@ -179,8 +179,6 @@ def store_match(event_code: str, match_data: dict, season: int = 2024) -> bool:
     
     return True
 
-# This example query gets the number of points that 22377's alliance scored in every match they played that is in the database
-# SELECT scores.totalPoints FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0 WHERE matches.teamNumber=22377;
 def store_new_team(name: str, number: int, created_by_id: int) -> Team:
     # Grab a connection from the pool
     conn = get_connection()
@@ -287,8 +285,7 @@ def get_match_scores(event_code: str = None, season: int = 2024) -> dict[MatchKe
         Key: a MatchKey
         Value: dictionary where key = statistic (from FTC event API) and value = its value
     """
-    # SELECT * FROM scores INNER JOIN matches ON scores.season=matches.season AND scores.eventCode=matches.eventCode AND scores.matchLevel=matches.tournamentLevel AND scores.matchSeries=matches.series AND scores.matchNumber=matches.matchNumber AND INSTR(matches.station, scores.alliance) > 0;
-    
+
     # Grab a connection from the pool
     conn = get_connection()
     try:
@@ -323,7 +320,6 @@ def get_match_teams(event_code: str = None, season: int = 2024) -> dict[MatchKey
         Value: dictionary where the key is the team number and the value is a tuple (station, on_field)
     """
 
-    # SELECT eventCode, tournamentLevel, series, matchNumber, teamNumber, station, onField FROM matches WHERE eventCode="FTCCMP1OCHO"
     # Grab a connection from the pool
     conn = get_connection()
     try:

@@ -43,7 +43,6 @@ def init():
 
 __historical_epas = defaultdict(lambda: [])
 
-# This is just point unit Elo for now
 def calc_epa(match_key: MatchKey):
     """
     Calculates the EPA updates from a single match.
