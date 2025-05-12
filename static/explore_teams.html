@@ -11,21 +11,21 @@
                 let teamsTable = document.getElementById("teams");
                 sortedTeams.forEach((team) => {
                     let teamRow = document.createElement("tr");
-                    teamRow.className = "p-2.5 text-center text-white border-b border-gray-500 hover:";
+                    teamRow.className = "p-2.5 text-center text-white border-b border-gray-500 hover:bg-gray-800 hover:text-white cursor-pointer transition-all";
                     teamRow.addEventListener('click', function(e) {
                         window.location = `epa.html?team=${team}`;
                     });
-                    let teamCol = document.createElement("td");
-                    teamCol.className = "p-2.5";
-                    teamCol.innerText = `${team}`;
                     let rankCol = document.createElement("td");
                     rankCol.className = "p-2.5";
                     rankCol.innerText = `${window.ranks[team][0]}`;
+                    let teamCol = document.createElement("td");
+                    teamCol.className = "p-2.5";
+                    teamCol.innerText = `${team}`;
                     let epaCol = document.createElement("td");
                     epaCol.className = "p-2.5";
                     epaCol.innerText = `${Number(window.ranks[team][1]).toFixed(1)}`;
-                    teamRow.appendChild(teamCol);
                     teamRow.appendChild(rankCol);
+                    teamRow.appendChild(teamCol);
                     teamRow.appendChild(epaCol);
                     let percentile = window.ranks[team][0] / Object.keys(window.ranks).length;
                     setElementColorForEPA(teamRow, percentile);
@@ -45,8 +45,8 @@
             <table class="table-auto w-full rounded-lg bg-gray-700">
                 <thead>
                 <tr class="gap-2 p-2.5 border-b border-thick border-white">
-                    <th class="text-white text-center p-2.5">Team</th>
                     <th class="text-white text-center p-2.5">Rank</th>
+                    <th class="text-white text-center p-2.5">Team</th>
                     <th class="text-white text-center p-2.5">EPA</th>
                 </tr>
                 </thead>

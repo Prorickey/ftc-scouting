@@ -18,7 +18,7 @@ async function plotEPAs(season, team) {
             line: {
                 color: '#F3F4F6',
                 shape: 'spline',
-                smoothing: 0.2
+                smoothing: 0.3
             }
         }
     ];
