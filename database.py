@@ -423,3 +423,19 @@ def get_user_by_id(user_id):
         }
     finally:
         release_connection(conn)
+
+def get_event_codes() -> list[str]:
+    """
+    Returns a list of all events for which matches are stored.
+    """
+
+    conn = get_connection()
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT eventCode FROM scores;")
+        event_codes = cursor.fetchall()
+        return list(map(lambda t: t[0], event_codes))
+    
+    except:
+        return []
