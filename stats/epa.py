@@ -37,7 +37,7 @@ def init():
     average_january_score = float(np.average(january_scores))
 
     # Set initial EPA to average "Week 1" score / 3
-    __epa_dict = defaultdict(lambda: average_january_score / 3)
+    __epa_dict = defaultdict(lambda: average_january_score / 2)
 
     __done_initializing = True
 
