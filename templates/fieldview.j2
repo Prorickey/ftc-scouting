@@ -48,9 +48,9 @@
         function SelectPos(){
             const posButtons=document.querySelectorAll('[class*="position"]')
             posButtons.forEach(el => {
-                    el.style.display='none';
-                })
-            }
+                el.style.display='none';
+            })
+        }
     </script>
     <body>
         <div class="header">
@@ -59,11 +59,11 @@
                 <input type="checkbox" id="preload" class="phase-Pre-Match">
             </div>
             <div class="header-center">
-                <button class="btn start" id='startBtn' onclick="Timer(1,'Auto','Teleop')"> &#9655;  </button>
+                <button class="btn start" id='startBtn' onclick="Timer(15,'Auto','Teleop')"> &#9655;  </button>
                 <button id="next-phase-btn" class="btn next-phase" style="display:none;">Start Teleop</button>
             </div>
             <div class="header-right">
-                <div class="team"> {{team}}</div>
+                <div class="team">{{team}}</div>
                 <div class="timer-display" id="timer-display">Pre-Match</div>
             </div>
         </div>
