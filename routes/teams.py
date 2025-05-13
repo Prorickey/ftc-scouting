@@ -1,7 +1,7 @@
 from flask import Blueprint, g, jsonify, make_response, request, render_template, redirect, url_for, flash
 
 from R import UserTeam
-from database import add_user, remove_user, store_new_team, update_team, get_team_by_code, add_user_to_team
+from database import add_user, append_notes, remove_user, store_new_team, update_team, get_team_by_code, add_user_to_team
 from middlware import authenticated, team_admin
 from email_validator import validate_email, EmailNotValidError
 
@@ -136,3 +136,30 @@ def promote_member(user_id: str):
         return make_response(jsonify({"message": "successfully promoted the user"}))
     else:
         return make_response(jsonify({"error": "failed to promote the user"}), 400)
+    
+@teams.route("/notes", methods=["POST"])
+@authenticated
+def add_notes():
+    """Route for appending notes"""
+    user: UserTeam = g.user
+    
+    # First check if user is not on a team
+    from database import get_user_team
+    current_team = get_user_team(user['id'])
+    if current_team is None:
+        # User is not in a team, redirect to homepage
+        return redirect(url_for('content.homepage'))
+    
+    # Get the notes from the form
+    notes = request.form.get('notes')
+    if not notes:
+        return redirect(url_for('content.homepage'))
+    
+    # Look up the team by code
+    team = get_user_team(user['id'])
+    if not team:
+        return redirect(url_for('content.homepage'))
+
+    append_notes(team['id'], notes)
+
+    return redirect(url_for('content.homepage'))

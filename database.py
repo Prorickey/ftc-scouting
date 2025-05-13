@@ -349,13 +349,13 @@ def get_user_team(user_id: int) -> UserTeam:
     conn = get_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role, t.team_code FROM users u INNER JOIN teams t ON u.team_id = t.rowid WHERE u.rowid = ?;", (user_id,))
+        cursor.execute("SELECT u.team_id, t.name AS team_name, u.team_role, t.team_code, t.notes FROM users u INNER JOIN teams t ON u.team_id = t.rowid WHERE u.rowid = ?;", (user_id,))
         team = cursor.fetchone()
 
         if team is None:
             return None 
         
-        return {'id': team[0], 'name': team[1], 'role': team[2], 'code': team[3]}
+        return {'id': team[0], 'name': team[1], 'role': team[2], 'code': team[3], 'notes': team[4]}
     finally: 
         release_connection(conn)
 
@@ -492,52 +492,6 @@ def get_team_by_code(team_code: str) -> dict:
         return None
     finally:
         release_connection(conn)
-    
-def get_team_members(user_id: int) -> list[dict]:
-    """
-    Returns a list of all members in the same team as the given user.
-    """
-
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        
-        # First, get the user's team_id
-        cursor.execute("SELECT team_id FROM users WHERE rowid=?", (user_id,))
-        result = cursor.fetchone()
-        
-        if not result or result[0] is None:
-            # User is not in a team
-            return []
-            
-        team_id = result[0]
-        
-        # Get all members of that team
-        cursor.execute("""
-            SELECT rowid, name, email, team_role 
-            FROM users 
-            WHERE team_id=? 
-            ORDER BY team_role DESC, name
-        """, (team_id,))
-        
-        members = cursor.fetchall()
-        
-        # Convert to list of dictionaries
-        return [
-            {
-                "id": member[0],
-                "name": member[1],
-                "email": member[2],
-                "role": member[3]  # 0: regular member, 1: admin
-            } 
-            for member in members
-        ]
-        
-    except Exception as e:
-        print(f"Error getting team members: {e}")
-        return []
-    finally:
-        release_connection(conn)
 
 def promote_user(user_id: int, promoter_id: int):
     conn = get_connection()
@@ -579,32 +533,7 @@ def get_event_codes() -> list[str]:
     
     except:
         return []
-    
-def get_team_by_code(team_code: str) -> dict:
-    """
-    Returns a team with the given team code.
-    """
 
-    conn = get_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT rowid, name, team_code, team_number FROM teams WHERE team_code=?", (team_code,))
-        team = cursor.fetchone()
-        
-        if team is None:
-            return None
-            
-        return {
-            'id': team[0],
-            'name': team[1],
-            'code': team[2],
-            'number': team[3]
-        }
-    except Exception as e:
-        print(f"Error finding team by code: {e}")
-        return None
-    finally:
-        release_connection(conn)
     
 def get_team_members(user_id: int) -> list[dict]:
     """
@@ -675,6 +604,40 @@ def promote_user_to_admin(user_id: int, admin_id: int) -> bool:
             
         # Update the user's role to admin (1)
         cursor.execute("UPDATE users SET team_role = 1 WHERE rowid = ?", (user_id,))
+        conn.commit()
+        return cursor.rowcount > 0
+    except Exception as e:
+        print(f"Error promoting user: {e}")
+        return False
+    finally:
+        release_connection(conn)
+
+def append_notes(team_id: int, notes: str) -> bool:
+    """
+    Append notes to existing notes
+    """
+
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        
+        # First check if both users are in the same team and admin has admin privileges
+        cursor.execute("""
+            SELECT notes FROM teams WHERE rowid=?
+        """, (team_id,))
+        
+        result = cursor.fetchone()
+        if not result:
+            # Smth is up
+            return False
+        
+        existing_notes = ""
+        if result[0] is not None:
+            existing_notes = result[0]
+            
+        # Update the existing notes
+        cursor.execute("UPDATE teams SET notes=? WHERE rowid = ?", (existing_notes + "\n\n" + notes, team_id, ))
         conn.commit()
         return cursor.rowcount > 0
     except Exception as e:

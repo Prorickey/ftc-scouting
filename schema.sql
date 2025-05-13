@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS teams (
     name        TEXT NOT NULL,
     team_number INTEGER NOT NULL UNIQUE,
     team_code   TEXT NOT NULL,
+    notes       TEXT,
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
