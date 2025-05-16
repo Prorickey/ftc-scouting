@@ -143,6 +143,59 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="flex-row w-full  mb-4 mt-6 bg-gray-100 hover:bg-gray-200 rounded-lg flex justify-between">
+                    <p class="py-2 px-4 text-xl font-semibold w-full cursor-pointer" onclick="let sd = document.getElementById('scouting-data'); sd.style.display = sd.style.display === 'none' ? 'flex' : 'none';">Show/Hide Scouting Data</h3>
+                    <form class="flex flex-row bg-blue-500 hover:bg-blue-600 rounded-lg z-10" onsubmit="redirectToTeam(event)">
+                        <input class="w-32 text-white border-r-2 border-gray-800 px-2" id="teamId" placeholder="8569" />
+                        <input class="cursor-pointer text-white px-4" type="submit" value="Scout Team" />
+                    </form>
+                </div>
+
+                <script>
+                    function redirectToTeam(event) {
+                        event.preventDefault(); 
+                        const teamCode = document.getElementById('teamId').value; 
+                        if (teamCode) {
+                            window.location.href = `/scout/${teamCode}`;
+                        } else {
+                            alert('Please enter a valid team number.');
+                        }
+                    }
+                </script>
+
+                <div id="scouting-data" class="overflow-x-auto" style="display: none;">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-2 px-4 border-b text-left">Team</th>
+                                <th class="py-2 px-4 border-b text-left">Auto High Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Auto Low Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Auto High Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Auto Low Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop High Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop Low Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop High Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop Low Specimens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in matches %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-2 px-4 border-b">{{ match.team }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_high_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_low_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_high_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_low_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.high_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.low_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.high_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.low_specimen }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 
                 <script>
                     function promoteUser(userId) {

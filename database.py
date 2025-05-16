@@ -602,10 +602,10 @@ def promote_user_to_admin(user_id: int, admin_id: int) -> bool:
             # Either users aren't in the same team or requestor isn't an admin
             return False
             
-        # Update the user's role to admin (1)
+        # Update the user's role to admin
         cursor.execute("UPDATE users SET team_role = 1 WHERE rowid = ?", (user_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        return True
     except Exception as e:
         print(f"Error promoting user: {e}")
         return False
@@ -643,5 +643,77 @@ def append_notes(team_id: int, notes: str) -> bool:
     except Exception as e:
         print(f"Error promoting user: {e}")
         return False
+    finally:
+        release_connection(conn)
+
+def add_match_to_database(owning_team: int, team: str, auto_high_sample: int, 
+                          auto_low_sample: int, auto_high_specimen: int, auto_low_specimen: int, 
+                          high_sample: int, low_sample: int, high_specimen: int, 
+                          low_specimen: int, climb_level: int, additional_points: int) -> bool:
+    """
+    Adds a match to the database.
+    """
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO scouting_match_data (owning_team, team, auto_high_sample, auto_low_sample,
+                       auto_high_specimen, auto_low_specimen, high_sample, low_sample,
+                       high_specimen, low_specimen, climb_level, additional_points) VALUES 
+                       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (owning_team, team, auto_high_sample, auto_low_sample, auto_high_specimen, 
+              auto_low_specimen, high_sample, low_sample, high_specimen, low_specimen,
+              climb_level, additional_points,))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error adding match: {e}")
+        return False
+    finally:
+        release_connection(conn)
+
+def get_scouted_matches_for_team(team_id: int):
+    """
+    Get all of a team's scouting data.
+    """
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+
+        # Get all scouting data for the team
+        cursor.execute("""
+            SELECT team, auto_high_sample, auto_low_sample,
+                    auto_high_specimen, auto_low_specimen, high_sample, low_sample,
+                    high_specimen, low_specimen, climb_level, additional_points
+            FROM scouting_match_data
+            WHERE owning_team=? 
+            ORDER BY created_at DESC
+        """, (team_id,))
+        
+        matches = cursor.fetchall()
+        
+        # Convert to list of dictionaries
+        return [
+            {
+                "team": m[0],
+                "auto_high_sample": m[1],
+                "auto_low_sample": m[2],
+                "auto_high_specimen": m[3],
+                "auto_low_specimen": m[4],
+                "high_sample": m[5],
+                "low_sample": m[6],
+                "high_specimen": m[7],
+                "low_specimen": m[8],
+                "climb_level": m[9],
+                "additional_points": m[10]
+            } 
+            for m in matches
+        ]
+    except Exception as e:
+        print(f"Error retrieving scouting data: {e}")
+        return []
     finally:
         release_connection(conn)

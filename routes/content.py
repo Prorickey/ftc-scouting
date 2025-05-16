@@ -38,9 +38,13 @@ def homepage():
     members = []
     if user['team']:
         members = database.get_team_members(user['id'])
+
+    matches = []
+    if user['team']:
+        matches = database.get_scouted_matches_for_team(user['team']['id'])
     
     # Render the homepage template with the full user details
-    return render_template("homepage.j2", user=user, team=user['team'], members=members)
+    return render_template("homepage.j2", user=user, team=user['team'], members=members, matches=matches)
 
 @content.route("/opr")
 def opr():

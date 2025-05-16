@@ -18,6 +18,27 @@ CREATE TABLE IF NOT EXISTS users (
     created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS scouting_match_data (
+    id SERIAL PRIMARY KEY,
+
+    --- This is the team that collected the data
+    owning_team INTEGER NOT NULL,
+
+    team INTEGER,
+    auto_high_sample INTEGER,
+    auto_low_sample INTEGER,
+    auto_high_specimen INTEGER,
+    auto_low_specimen INTEGER,
+    high_sample INTEGER,
+    low_sample INTEGER,
+    high_specimen INTEGER,
+    low_specimen INTEGER,
+    climb_level INTEGER,
+    additional_points INTEGER,
+    
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS scores (
     season               INTEGER NOT NULL,
     eventCode            TEXT NOT NULL,
