@@ -602,10 +602,10 @@ def promote_user_to_admin(user_id: int, admin_id: int) -> bool:
             # Either users aren't in the same team or requestor isn't an admin
             return False
             
-        # Update the user's role to admin (1)
+        # Update the user's role to admin
         cursor.execute("UPDATE users SET team_role = 1 WHERE rowid = ?", (user_id,))
         conn.commit()
-        return cursor.rowcount > 0
+        return True
     except Exception as e:
         print(f"Error promoting user: {e}")
         return False
@@ -645,3 +645,32 @@ def append_notes(team_id: int, notes: str) -> bool:
         return False
     finally:
         release_connection(conn)
+
+def add_match_to_database(owning_team: int, team: str, auto_high_sample: int, 
+                          auto_low_sample: int, auto_high_specimin: int, auto_low_specimin: int, 
+                          high_sample: int, low_sample: int, high_specimin: int, 
+                          low_specimin: int, climb_level: int, additional_points: int) -> bool:
+    """
+    Adds a match to the database.
+    """
+
+    conn = get_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO scouting_match_data (owning_team, team, auto_high_sample, auto_low_sample,
+                       auto_high_specemin, auto_low_specimin, high_sample, low_sample,
+                       high_specimin, low_specimin, climb_level, additional_points) VALUES 
+                       (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (owning_team, team, auto_high_sample, auto_low_sample, auto_high_specimin, 
+              auto_low_specimin, high_sample, low_sample, high_specimin, low_specimin,
+              climb_level, additional_points,))
+        
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f"Error adding match: {e}")
+        return False
+    finally:
+        release_connection(conn)
+
