@@ -9,6 +9,9 @@ auth = Blueprint('auth', __name__, template_folder="../templates")
 
 @auth.route("/register", methods=["POST"])
 def register():
+    """
+    Hosts a route to register a user via a POST request.
+    """
     try:
         email = request.form.get('email')
         password = request.form.get('password')
@@ -36,6 +39,9 @@ def register():
     
 @auth.route("/login", methods=["POST"])
 def login():
+    """
+    Hosts a route to log in via a POST request.
+    """
     try:
         email = request.form.get('email')
         password = request.form.get('password')
@@ -63,6 +69,9 @@ def login():
 
 @auth.route("/logout", methods=["GET"])
 def logout():
+    """
+    Hosts a route to log out the current user.
+    """
     # Get the current session token from cookies
     session_token = request.cookies.get('session')
     

@@ -7,6 +7,11 @@
         <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
         <script>
             function loadNTeams(n) {
+                /**
+                 * Loads `n` more teams into the EPA rank table.
+                 * 
+                 * @param n the number of additional teams to load
+                 */
                 let sortedTeams = Object.keys(window.ranks).sort((a, b) => window.ranks[a][0] - window.ranks[b][0]).slice(window.latestIndex, window.latestIndex + n);
                 window.latestIndex += n;
                 let teamsTable = document.getElementById("teams");

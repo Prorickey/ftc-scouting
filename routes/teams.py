@@ -10,6 +10,9 @@ teams = Blueprint('teams', __name__)
 @teams.route("/create", methods=["POST"])
 @authenticated
 def create_team():
+    """
+    Hosts a route to create a scouting team.
+    """
     user = g.user
 
     name = request.form.get('name') 
@@ -32,6 +35,9 @@ def create_team():
 @teams.route("/leave", methods=["GET"])
 @authenticated
 def leave_team():
+    """
+    Hosts a route to leave a scouting team.
+    """
     user = g.user
     
     remove_user(user['id'])
@@ -42,6 +48,9 @@ def leave_team():
 @teams.route("/update", methods=["POST"])
 @team_admin
 def edit_team():
+    """
+    Hosts a route to edit a team (needs admin access).
+    """
     team: UserTeam = g.team
 
     body = request.get_json()
@@ -58,6 +67,12 @@ def edit_team():
 @teams.route("/members/<user_id>", methods=["DELETE"])
 @team_admin
 def remove_member(user_id: str):
+    """
+    Hosts a route to remove a member from a team.
+
+    Args:
+        user_id: the user ID of the user to remove
+    """
     uid = None 
     try:
         uid = int(user_id)
@@ -72,6 +87,9 @@ def remove_member(user_id: str):
 @teams.route("/members", methods=["PUT"])
 @team_admin
 def add_member():
+    """
+    Hosts a route to add a member to the team.
+    """
     team: UserTeam = g.team 
 
     body = request.get_json()

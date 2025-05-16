@@ -7,6 +7,9 @@ from .stats import stats
 from .scout import scout
 
 def create_app():
+    """
+    Creates and returns the Flask app.
+    """
     app = Flask(__name__, static_folder="../static")
 
     # API Routes

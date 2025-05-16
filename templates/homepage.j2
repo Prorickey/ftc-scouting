@@ -154,6 +154,9 @@
 
                 <script>
                     function redirectToTeam(event) {
+                        /**
+                         * Redirects the user to the field scouting page for a team.
+                         */
                         event.preventDefault(); 
                         const teamCode = document.getElementById('teamId').value; 
                         if (teamCode) {
@@ -199,6 +202,11 @@
                 
                 <script>
                     function promoteUser(userId) {
+                        /**
+                         * Promotes a user to administrator.
+                         * 
+                         * @param userId the user's ID
+                         */
                         if (confirm('Are you sure you want to promote this user to admin?')) {
                             fetch(`/api/teams/members/${userId}/promote`, {
                                 method: 'POST',
@@ -223,6 +231,11 @@
                     }
                     
                     function kickUser(userId) {
+                        /**
+                         * Kicks a user.
+                         * 
+                         * @param userId the user's ID
+                         */
                         if (confirm('Are you sure you want to remove this user from the team?')) {
                             fetch(`/api/teams/members/${userId}`, {
                                 method: 'DELETE'
@@ -244,6 +257,9 @@
                     }
                     
                     function copyTeamCode() {
+                        /**
+                         * Copies the active team code to the clipboard.
+                         */
                         const teamCode = "{{ team.code }}";
                         navigator.clipboard.writeText(teamCode)
                             .then(() => {

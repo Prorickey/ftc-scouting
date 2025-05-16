@@ -7,14 +7,23 @@ content = Blueprint('content', __name__, template_folder="../templates", static_
 
 @content.route("/login")
 def login_page():
+    """
+    Hosts a route for the login page.
+    """
     return render_template("login.j2")
 
 @content.route("/register")
 def register_page():
+    """
+    Hosts a route for the register page.
+    """
     return render_template("register.j2")
 
 @content.route("/")
 def homepage():
+    """
+    Hosts a route for the homepage.
+    """
     session_token = request.cookies.get('session')
 
     if not session_token:
@@ -48,19 +57,31 @@ def homepage():
 
 @content.route("/opr")
 def opr():
+    """
+    Hosts a route for the OPR page.
+    """
     event_codes = database.get_event_codes()
     return render_template("opr.j2", events=event_codes, fields=database.SCORE_FIELDS_2024)
 
 @content.route("/epa")
 def epa():
+    """
+    Hosts a route for the EPA page.
+    """
     return render_template("epa.j2")
 
 @content.route("/explore_teams")
 def explore_teams():
+    """
+    Hosts a route for the Explore Teams page.
+    """
     return render_template("explore_teams.j2")
 
 @content.route("/createteam")
 def create_team_page():
+    """
+    Hosts a route for the team creation page.
+    """
     session_token = request.cookies.get('session')
     if not session_token:
         return redirect(url_for('content.login_page'))

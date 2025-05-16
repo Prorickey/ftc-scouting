@@ -42,6 +42,12 @@ async function plotEPAs(season, team) {
 }
 
 async function getEPARanks(season) {
+    /**
+     * Returns the EPA rankings for a given season.
+     * @param season the season to get EPA ranks for
+     * 
+     * @returns a dictionary where key = team and value = their EPA rank (1 = first).
+     */
     let response = await fetch(`/api/stats/epa/${season}/ranks`, {
         method: 'GET'
     })
@@ -51,6 +57,13 @@ async function getEPARanks(season) {
 }
 
 function setElementColorForEPA(element, percentile) {
+    /**
+     * Sets an element's background and foreground color given an EPA percentile.
+     * Top 1% = blue, top 10% = dark green, top 25% = light green, bottom 25% = red
+     * 
+     * @param element the HTML element to update
+     * @param percentile [0,1] the team's rank percentile, 0 is best
+     */
     if (percentile <= 0.01) {
         // blue
         element.classList.remove("bg-gray-700", "text-gray-800", "bg-green-400", "bg-blue-500", "text-white", "bg-green-200", "bg-red-200");
@@ -75,6 +88,9 @@ function setElementColorForEPA(element, percentile) {
 }
 
 async function updateEPA() {
+    /**
+     * Reloads EPA chart and rank.
+     */
     let team = document.getElementById('team').value;
     let currentEPA = await plotEPAs(2024, team);
     document.getElementById('epa').hidden = false;

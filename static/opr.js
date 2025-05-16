@@ -1,4 +1,11 @@
 function sortedDictionaryKeysByValue(dict) {
+    /**
+     * Returns dictionary keys sorted by their values.
+     * 
+     * @param dict the dictionary
+     * 
+     * @returns dict's keys sorted by value (in descending order)
+     */
     const items = Object.entries(dict);
   
     items.sort(([, valueA], [, valueB]) => valueB - valueA); // Sort in descending order
@@ -7,6 +14,13 @@ function sortedDictionaryKeysByValue(dict) {
 }
 
 async function plotOPR(season, eventCode, statistic) {
+    /**
+     * Plots OPR for an event.
+     * 
+     * @param season the season the event happened
+     * @param eventCode the event's code (e.g. FTCCMP1)
+     * @param statistic the specific score stat to fetch (e.g. totalPoints)
+     */
     let response = await fetch(`/api/stats/opr/${season}/${eventCode}/${statistic}`, {
         method: 'GET'
     })
