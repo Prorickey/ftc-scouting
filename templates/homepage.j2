@@ -210,7 +210,7 @@
                     <textarea name="notes" class="w-full p-1 text-black border-2" placeholder="Enter your scouting notes..."></textarea>
                     <input class="cursor-pointer bg-green-600 hover:bg-green-700 rounded-lg text-white py-2 px-4" type="submit" value="Append Notes" />
                     <p class="mt-2 text-3xl font-semibold">Compiled Notes</p>
-                    <p><pre>{{ team.notes }}</pre></p>
+                    <p><pre>{{ team.notes | e }}</pre></p>
                 </form>
             </div>
             {% endif %}
