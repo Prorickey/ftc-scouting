@@ -25,7 +25,6 @@ def scout_team_post(team: str):
         return make_response("you must be on a team to scout", 400)
 
     body = request.get_json()
-    team = body['team']
     auto_high_sample = body['auto_high_sample']
     auto_low_sample = body['auto_low_sample']
     auto_high_specimen = body['auto_high_specimen']
@@ -37,7 +36,7 @@ def scout_team_post(team: str):
     climb_level = body['climb_level']
     additional_points = body['additional_points']
 
-    res = database.add_match_to_database(user['team']['id'], team, auto_high_sample, auto_low_sample, 
+    res = database.add_match_to_database(user['team']['id'], int(team), auto_high_sample, auto_low_sample, 
                                          auto_high_specimen, auto_low_specimen, high_sample, low_sample, 
                                          high_specimen, low_specimen, climb_level, additional_points)
 

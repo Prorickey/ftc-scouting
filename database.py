@@ -659,7 +659,7 @@ def add_match_to_database(owning_team: int, team: str, auto_high_sample: int,
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO scouting_match_data (owning_team, team, auto_high_sample, auto_low_sample,
-                       auto_high_specemin, auto_low_specimen, high_sample, low_sample,
+                       auto_high_specimen, auto_low_specimen, high_sample, low_sample,
                        high_specimen, low_specimen, climb_level, additional_points) VALUES 
                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (owning_team, team, auto_high_sample, auto_low_sample, auto_high_specimen, 
