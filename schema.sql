@@ -34,7 +34,9 @@ CREATE TABLE IF NOT EXISTS scouting_match_data (
     high_specimen INTEGER,
     low_specimen INTEGER,
     climb_level INTEGER,
-    additional_points INTEGER
+    additional_points INTEGER,
+    
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS scores (
