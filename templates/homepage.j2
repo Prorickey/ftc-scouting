@@ -143,6 +143,40 @@
                         </tbody>
                     </table>
                 </div>
+
+                <p class="text-xl font-semibold mb-4 mt-6 bg-gray-100 hover:bg-gray-200 py-2 px-4 rounded-lg flex cursor-pointer" onclick="let sd = document.getElementById('scouting-data'); sd.style.display = sd.style.display === 'none' ? 'flex' : 'none';">Show/Hide Scouting Data</h3>
+                <div id="scouting-data" class="overflow-x-auto" style="display: none;">
+                    <table class="min-w-full bg-white border border-gray-200">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="py-2 px-4 border-b text-left">Team</th>
+                                <th class="py-2 px-4 border-b text-left">Auto High Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Auto Low Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Auto High Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Auto Low Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop High Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop Low Samples</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop High Specimens</th>
+                                <th class="py-2 px-4 border-b text-left">Teleop Low Specimens</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in matches %}
+                            <tr class="hover:bg-gray-50">
+                                <td class="py-2 px-4 border-b">{{ match.team }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_high_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_low_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_high_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.auto_low_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.high_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.low_sample }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.high_specimen }}</td>
+                                <td class="py-2 px-4 border-b">{{ match.low_specimen }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
                 
                 <script>
                     function promoteUser(userId) {

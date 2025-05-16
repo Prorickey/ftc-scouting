@@ -686,8 +686,8 @@ def get_scouted_matches_for_team(team_id: int):
         # Get all scouting data for the team
         cursor.execute("""
             SELECT team, auto_high_sample, auto_low_sample,
-                    auto_high_specimin, auto_low_specimin, high_sample, low_sample,
-                    high_specimin, low_specimin, climb_level, additional_points
+                    auto_high_specimen, auto_low_specimen, high_sample, low_sample,
+                    high_specimen, low_specimen, climb_level, additional_points
             FROM scouting_match_data
             WHERE owning_team=? 
             ORDER BY created_at DESC
@@ -701,12 +701,12 @@ def get_scouted_matches_for_team(team_id: int):
                 "team": m[0],
                 "auto_high_sample": m[1],
                 "auto_low_sample": m[2],
-                "auto_high_specimin": m[3],
-                "auto_low_specimin": m[4],
+                "auto_high_specimen": m[3],
+                "auto_low_specimen": m[4],
                 "high_sample": m[5],
                 "low_sample": m[6],
-                "high_specimin": m[7],
-                "low_specimin": m[8],
+                "high_specimen": m[7],
+                "low_specimen": m[8],
                 "climb_level": m[9],
                 "additional_points": m[10]
             } 
