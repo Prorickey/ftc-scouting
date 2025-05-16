@@ -134,6 +134,7 @@ body{
     border-radius:30%;
     border:none;
     background-color:var(--purple);
+    justify-content: center;
 }
 
 .next-phase{
@@ -180,8 +181,8 @@ body{
     left:100%;
 }
 
-.speciman-high,
-.speciman-low{
+.specimen-high,
+.specimen-low{
     position:absolute;
     width:8%;
     height:8%;

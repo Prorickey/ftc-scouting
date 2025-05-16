@@ -647,9 +647,9 @@ def append_notes(team_id: int, notes: str) -> bool:
         release_connection(conn)
 
 def add_match_to_database(owning_team: int, team: str, auto_high_sample: int, 
-                          auto_low_sample: int, auto_high_specimin: int, auto_low_specimin: int, 
-                          high_sample: int, low_sample: int, high_specimin: int, 
-                          low_specimin: int, climb_level: int, additional_points: int) -> bool:
+                          auto_low_sample: int, auto_high_specimen: int, auto_low_specimen: int, 
+                          high_sample: int, low_sample: int, high_specimen: int, 
+                          low_specimen: int, climb_level: int, additional_points: int) -> bool:
     """
     Adds a match to the database.
     """
@@ -659,11 +659,11 @@ def add_match_to_database(owning_team: int, team: str, auto_high_sample: int,
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO scouting_match_data (owning_team, team, auto_high_sample, auto_low_sample,
-                       auto_high_specemin, auto_low_specimin, high_sample, low_sample,
-                       high_specimin, low_specimin, climb_level, additional_points) VALUES 
+                       auto_high_specemin, auto_low_specimen, high_sample, low_sample,
+                       high_specimen, low_specimen, climb_level, additional_points) VALUES 
                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (owning_team, team, auto_high_sample, auto_low_sample, auto_high_specimin, 
-              auto_low_specimin, high_sample, low_sample, high_specimin, low_specimin,
+        """, (owning_team, team, auto_high_sample, auto_low_sample, auto_high_specimen, 
+              auto_low_specimen, high_sample, low_sample, high_specimen, low_specimen,
               climb_level, additional_points,))
         
         conn.commit()

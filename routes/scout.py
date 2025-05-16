@@ -11,7 +11,7 @@ def scout_team_route(team: str):
     """
     Renders the scouting webpage.
     """
-    return render_template("fieldview.j2", team=team)
+    return render_template("fieldview.j2", team=int(team))
 
 @scout.route("/<team>", methods=["POST"])
 @authenticated
@@ -28,18 +28,18 @@ def scout_team_post(team: str):
     team = body['team']
     auto_high_sample = body['auto_high_sample']
     auto_low_sample = body['auto_low_sample']
-    auto_high_specimin = body['auto_high_specimin']
-    auto_low_specimin = body['auto_low_specimin']
+    auto_high_specimen = body['auto_high_specimen']
+    auto_low_specimen = body['auto_low_specimen']
     high_sample = body['high_sample']
     low_sample = body['low_sample']
-    high_specimin = body['high_specimin']
-    low_specimin = body['low_specimin']
+    high_specimen = body['high_specimen']
+    low_specimen = body['low_specimen']
     climb_level = body['climb_level']
     additional_points = body['additional_points']
 
     res = database.add_match_to_database(user['team']['id'], team, auto_high_sample, auto_low_sample, 
-                                         auto_high_specimin, auto_low_specimin, high_sample, low_sample, 
-                                         high_specimin, low_specimin, climb_level, additional_points)
+                                         auto_high_specimen, auto_low_specimen, high_sample, low_sample, 
+                                         high_specimen, low_specimen, climb_level, additional_points)
 
     if res:
         return make_response("success", 200)

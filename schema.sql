@@ -27,12 +27,12 @@ CREATE TABLE IF NOT EXISTS scouting_match_data (
     team INTEGER,
     auto_high_sample INTEGER,
     auto_low_sample INTEGER,
-    auto_high_specimin INTEGER,
-    auto_low_specimin INTEGER,
+    auto_high_specimen INTEGER,
+    auto_low_specimen INTEGER,
     high_sample INTEGER,
     low_sample INTEGER,
-    high_specimin INTEGER,
-    low_specimin INTEGER,
+    high_specimen INTEGER,
+    low_specimen INTEGER,
     climb_level INTEGER,
     additional_points INTEGER
 );
